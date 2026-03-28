@@ -2,9 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { X, ChevronDown, Trash2, Plus } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
-import { useAutoDM } from '@/hooks/useAutoDM';
-import type { AutoDMRule } from '@/gen/trendbird/v1/auto_dm_pb';
+import { useAutoReply } from '@/hooks/useAutoReply';
+import type { AutoReplyRule } from '@/gen/trendbird/v1/auto_reply_pb';
 import { C, up, dn } from '@/lib/design-tokens';
 import { Input, Toggle, Button, Badge, Toast } from '@/components/ui';
 import { TextArea } from '@/components/ui/TextArea';
@@ -19,29 +18,38 @@ const divider = {
 } as const;
 
 type LocalRule = {
-  id: string; // '' = new unsaved rule
+  id: string;
   enabled: boolean;
+  targetTweetId: string;
+  targetTweetText: string;
   keywords: string[];
   template: string;
   keywordInput: string;
   isNew: boolean;
 };
 
-function ruleToLocal(r: AutoDMRule): LocalRule {
+function ruleToLocal(r: AutoReplyRule): LocalRule {
   return {
     id: r.id,
     enabled: r.enabled,
+    targetTweetId: r.targetTweetId,
+    targetTweetText: r.targetTweetText,
     keywords: [...r.triggerKeywords],
-    template: r.templateMessage,
+    template: r.replyTemplate,
     keywordInput: '',
     isNew: false,
   };
 }
 
-export default function AutoDMPage() {
-  const user = useAuthStore(s => s.user);
+/** Tweet URL から ID を抽出する（URL でない場合はそのまま返す） */
+function extractTweetId(input: string): string {
+  const trimmed = input.trim();
+  const match = trimmed.match(/\/status\/(\d+)/);
+  return match ? match[1] : trimmed;
+}
 
-  const { rules, logs, isLoading, listRules, createRule, updateRule, deleteRule, getSentLogs } = useAutoDM();
+export default function AutoReplyPage() {
+  const { rules, logs, isLoading, listRules, createRule, updateRule, deleteRule, getSentLogs } = useAutoReply();
   const [localRules, setLocalRules] = useState<LocalRule[]>([]);
   const [initialized, setInitialized] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
@@ -75,7 +83,7 @@ export default function AutoDMPage() {
   const handleAddRule = () => {
     setLocalRules(prev => [
       ...prev,
-      { id: '', enabled: true, keywords: [], template: '', keywordInput: '', isNew: true },
+      { id: '', enabled: true, targetTweetId: '', targetTweetText: '', keywords: [], template: '', keywordInput: '', isNew: true },
     ]);
   };
 
@@ -102,11 +110,16 @@ export default function AutoDMPage() {
 
   const handleSave = async (index: number) => {
     const rule = localRules[index];
+    if (rule.isNew && !rule.targetTweetId) {
+      toast('監視対象のポストURLまたはIDを入力してください');
+      return;
+    }
     const ruleKey = rule.id || `new-${index}`;
     setSavingId(ruleKey);
     try {
       if (rule.isNew) {
-        await createRule(rule.keywords, rule.template);
+        const tweetId = extractTweetId(rule.targetTweetId);
+        await createRule(tweetId, rule.targetTweetText, rule.keywords, rule.template);
         toast('ルールを作成しました');
       } else {
         await updateRule(rule.id, rule.enabled, rule.keywords, rule.template);
@@ -122,8 +135,6 @@ export default function AutoDMPage() {
   const handleToggle = async (index: number, enabled: boolean) => {
     const rule = localRules[index];
     updateLocal(index, { enabled });
-
-    // 新規未保存ルールはAPI呼び出し不要（IDがない）
     if (rule.isNew) return;
 
     const ruleKey = rule.id || `new-${index}`;
@@ -162,7 +173,7 @@ export default function AutoDMPage() {
           fontSize: 22, fontWeight: 600, color: C.text,
           marginBottom: 24, animation: 'fadeUp 0.4s ease both',
         }}>
-          自動DM
+          自動リプライ
         </h1>
 
         <Tabs defaultValue="settings">
@@ -173,7 +184,6 @@ export default function AutoDMPage() {
 
           {/* ── 設定タブ ── */}
           <TabsContent value="settings">
-            {/* ルール追加ボタン */}
             <div style={{ marginBottom: 16, animation: 'fadeUp 0.4s ease both' }}>
               <Button
                 variant="ghost"
@@ -193,11 +203,10 @@ export default function AutoDMPage() {
                 fontSize: 13, color: C.textMuted, textAlign: 'center',
                 animation: 'fadeUp 0.4s ease both',
               }}>
-                自動DMルールがありません。「ルールを追加」からルールを作成してください
+                自動リプライルールがありません。「ルールを追加」からルールを作成してください
               </div>
             )}
 
-            {/* ルールカード一覧 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {localRules.map((rule, index) => {
                 const ruleKey = rule.id || `new-${index}`;
@@ -214,13 +223,13 @@ export default function AutoDMPage() {
                   >
                     {/* ヘッダー: Toggle + 削除 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div data-testid={`auto-dm-toggle-${index}`}>
+                      <div data-testid={`auto-reply-toggle-${index}`}>
                         <Toggle
                           checked={rule.enabled}
                           onChange={(v) => handleToggle(index, v)}
                           disabled={isToggling}
                           label={rule.isNew ? '新しいルール' : `ルール ${index + 1}`}
-                          description="有効にするとキーワードマッチ時にDMを自動送信します"
+                          description="有効にするとキーワードマッチ時にリプライを自動送信します"
                         />
                       </div>
                       <button
@@ -242,12 +251,40 @@ export default function AutoDMPage() {
 
                     <div style={divider} />
 
-                    {/* グレーアウト領域 */}
                     <div style={{
                       opacity: rule.enabled ? 1 : 0.45,
                       pointerEvents: rule.enabled ? 'auto' : 'none',
                       transition: 'opacity 0.22s ease',
                     }}>
+                      {/* 監視対象ポスト */}
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 8 }}>
+                          監視対象ポスト
+                        </div>
+                        {rule.isNew ? (
+                          <Input
+                            value={rule.targetTweetId}
+                            onChange={(v) => updateLocal(index, { targetTweetId: v })}
+                            placeholder="ポストのURLまたはツイートIDを入力"
+                          />
+                        ) : (
+                          <div style={{
+                            padding: '10px 14px', borderRadius: 12,
+                            background: C.bg, boxShadow: dn(2),
+                            fontSize: 12, color: C.textSub, lineHeight: 1.5,
+                          }}>
+                            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                              ID: {rule.targetTweetId}
+                            </div>
+                            {rule.targetTweetText && (
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {rule.targetTweetText}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       {/* キーワードセクション */}
                       <div style={{ marginBottom: 20 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 8 }}>
@@ -312,29 +349,27 @@ export default function AutoDMPage() {
                             background: C.bg, boxShadow: dn(2),
                             fontSize: 12, color: C.textMuted, lineHeight: 1.6,
                           }}>
-                            キーワードを追加すると、リプライにそのキーワードが含まれた場合に自動でDMを送信します
+                            キーワードを追加すると、リプライにそのキーワードが含まれた場合に自動で返信します
                           </div>
                         )}
                       </div>
 
                       <div style={divider} />
 
-                      {/* テンプレートメッセージ */}
+                      {/* 返信テンプレート */}
                       <TextArea
-                        label="テンプレートメッセージ"
+                        label="返信テンプレート"
                         value={rule.template}
                         onChange={(v) => updateLocal(index, { template: v })}
                         maxLength={280}
                         showCount
-                        placeholder="自動送信するDMのテンプレートを入力"
+                        placeholder="自動送信する返信のテンプレートを入力"
                         rows={4}
                       />
-
                     </div>
 
                     <div style={divider} />
 
-                    {/* 保存ボタン（グレーアウト領域の外） */}
                     <Button
                       variant="filled"
                       size="md"
@@ -349,7 +384,6 @@ export default function AutoDMPage() {
               })}
             </div>
 
-            {/* X連携注意書き（折りたたみ） */}
             {localRules.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <button
@@ -370,7 +404,7 @@ export default function AutoDMPage() {
                       transition: 'transform 0.2s ease',
                     }}
                   />
-                  X連携についての注意事項
+                  自動リプライについての注意事項
                 </button>
                 {noticeOpen && (
                   <div style={{
@@ -378,7 +412,7 @@ export default function AutoDMPage() {
                     background: C.bg, boxShadow: dn(2),
                     fontSize: 11, color: C.textMuted, lineHeight: 1.6,
                   }}>
-                    自動DM機能を利用するには、X連携でDM送信の権限が必要です。既存ユーザーはX連携の再接続が必要な場合があります。
+                    自動リプライはポーリングで動作するため、リプライ検知まで最大1時間の遅延があります。X APIのレート制限により、大量のリプライがある場合は段階的に処理されます。
                   </div>
                 )}
               </div>
@@ -425,7 +459,7 @@ export default function AutoDMPage() {
                         fontSize: 12, color: C.textSub, lineHeight: 1.5, marginTop: 4,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
-                        {log.dmText}
+                        {log.replyText}
                       </div>
                     </div>
                   ))}

@@ -23,6 +23,10 @@ import {
   DMSentLogSchema,
 } from '../../src/gen/trendbird/v1/auto_dm_pb';
 import {
+  AutoReplyRuleSchema,
+  ReplySentLogSchema,
+} from '../../src/gen/trendbird/v1/auto_reply_pb';
+import {
   ScheduledPostSchema,
   PostStatus,
   PostHistorySchema,
@@ -152,6 +156,52 @@ export function buildDMSentLog(overrides?: {
     replyTweetId: `tweet-${n}`,
     triggerKeyword: `keyword-${n}`,
     dmText: `DM text ${n}`,
+    sentAt: '2026-01-01T12:00:00Z',
+    ...overrides,
+  }));
+}
+
+export function buildAutoReplyRule(overrides?: {
+  id?: string;
+  enabled?: boolean;
+  targetTweetId?: string;
+  targetTweetText?: string;
+  triggerKeywords?: string[];
+  replyTemplate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}) {
+  const n = nextSeq();
+  return toJson(AutoReplyRuleSchema, create(AutoReplyRuleSchema, {
+    id: `rule-${n}`,
+    enabled: true,
+    targetTweetId: `target-tweet-${n}`,
+    targetTweetText: `Target tweet text ${n}`,
+    triggerKeywords: [`keyword-${n}`],
+    replyTemplate: `Reply template ${n}`,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }));
+}
+
+export function buildReplySentLog(overrides?: {
+  id?: string;
+  originalTweetId?: string;
+  originalAuthorId?: string;
+  replyTweetId?: string;
+  triggerKeyword?: string;
+  replyText?: string;
+  sentAt?: string;
+}) {
+  const n = nextSeq();
+  return toJson(ReplySentLogSchema, create(ReplySentLogSchema, {
+    id: `log-${n}`,
+    originalTweetId: `tweet-${n}`,
+    originalAuthorId: `author-${n}`,
+    replyTweetId: `reply-tweet-${n}`,
+    triggerKeyword: `keyword-${n}`,
+    replyText: `Reply text ${n}`,
     sentAt: '2026-01-01T12:00:00Z',
     ...overrides,
   }));

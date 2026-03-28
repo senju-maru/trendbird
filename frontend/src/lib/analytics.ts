@@ -142,3 +142,14 @@ export function trackAutoDmRuleDelete() {
   if (!isEnabled()) return;
   sendGAEvent('event', 'auto_dm_rule_delete', {});
 }
+
+// ── Auto-Reply ──
+export function trackAutoReplyRuleCreate() {
+  if (!isEnabled()) return;
+  sendGAEvent('event', 'auto_reply_rule_create', {});
+}
+
+export function trackAutoReplyRuleDelete() {
+  if (!isEnabled()) return;
+  sendGAEvent('event', 'auto_reply_rule_delete', {});
+}

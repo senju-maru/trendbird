@@ -44,6 +44,10 @@ import {
   ListAutoDMRulesResponseSchema,
   GetDMSentLogsResponseSchema,
 } from '../../src/gen/trendbird/v1/auto_dm_pb';
+import {
+  ListAutoReplyRulesResponseSchema,
+  GetReplySentLogsResponseSchema,
+} from '../../src/gen/trendbird/v1/auto_reply_pb';
 
 /**
  * setupDefaults 用の固定初期化データ。
@@ -182,6 +186,14 @@ export class ApiMock {
       this.mockRPC('AutoDMService', 'GetDMSentLogs',
         toJson(GetDMSentLogsResponseSchema,
           create(GetDMSentLogsResponseSchema, {}))),
+
+      // AutoReplyService
+      this.mockRPC('AutoReplyService', 'ListAutoReplyRules',
+        toJson(ListAutoReplyRulesResponseSchema,
+          create(ListAutoReplyRulesResponseSchema, {}))),
+      this.mockRPC('AutoReplyService', 'GetReplySentLogs',
+        toJson(GetReplySentLogsResponseSchema,
+          create(GetReplySentLogsResponseSchema, {}))),
     ]);
   }
 

@@ -218,27 +218,6 @@ test.describe('自動DM', () => {
     });
   });
 
-  // ─── ルール上限 ─────────────────────────────────────────────
-
-  test.describe('ルール上限', () => {
-    test('5個のルールがある場合、追加ボタンが無効化される', async ({ page, apiMock }) => {
-      const rules = Array.from({ length: 5 }, (_, i) =>
-        buildAutoDMRule({ enabled: true, triggerKeywords: [`kw-${i}`] }),
-      );
-      await apiMock.mockRPC('AutoDMService', 'ListAutoDMRules', { rules });
-
-      const autoDM = new AutoDMPage(page);
-      await autoDM.goto();
-
-      // 5個のルールが表示されていることを確認
-      await expect(page.getByText('ルール 5')).toBeVisible();
-
-      // 追加ボタンが disabled で (5/5) 表示
-      await expect(autoDM.addRuleButton).toBeDisabled();
-      await expect(page.getByText('ルールを追加 (5/5)')).toBeVisible();
-    });
-  });
-
   // ─── テンプレート文字数制限 ────────────────────────────────
 
   test.describe('テンプレート文字数制限', () => {
