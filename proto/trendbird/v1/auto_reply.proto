@@ -1,0 +1,120 @@
+// 特定ポストへのリプライに対する自動返信の設定・履歴管理
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// 自動リプライルールの設定
+// - ユーザーごとに複数のルールを持てる（1:N）
+// - 指定ポスト（target_tweet_id）へのリプライのうち、trigger_keywords に一致するものに reply_template で自動返信
+message AutoReplyRule {
+  string id = 1;
+  bool enabled = 2;
+  // 監視対象ポストのツイートID
+  string target_tweet_id = 3;
+  // 表示用の監視対象ポスト本文（スナップショット）
+  string target_tweet_text = 4;
+  // マッチ対象のキーワード一覧（大文字小文字無視、最大10個）
+  repeated string trigger_keywords = 5 [(buf.validate.field).repeated.max_items = 10];
+  // 返信テンプレート文（最大280文字）
+  string reply_template = 6 [(buf.validate.field).string.max_len = 280];
+  // 作成日時（ISO 8601）
+  string created_at = 7;
+  // 更新日時（ISO 8601）
+  string updated_at = 8;
+}
+
+// 自動リプライ送信履歴の1レコード
+message ReplySentLog {
+  string id = 1;
+  // リプライ元のツイートID
+  string original_tweet_id = 2;
+  // リプライ元のXユーザーID
+  string original_author_id = 3;
+  // 自分が投稿した返信ツイートID
+  string reply_tweet_id = 4;
+  // マッチしたキーワード
+  string trigger_keyword = 5;
+  // 実際に送信した返信文
+  string reply_text = 6;
+  // 送信日時（ISO 8601）
+  string sent_at = 7;
+}
+
+// 自動リプライルール一覧取得リクエスト
+message ListAutoReplyRulesRequest {}
+
+// 自動リプライルール一覧取得レスポンス
+message ListAutoReplyRulesResponse {
+  repeated AutoReplyRule rules = 1;
+}
+
+// 自動リプライルール新規作成リクエスト
+message CreateAutoReplyRuleRequest {
+  // 監視対象ポストのツイートID
+  string target_tweet_id = 1 [(buf.validate.field).string.min_len = 1];
+  // 表示用の監視対象ポスト本文
+  string target_tweet_text = 2;
+  // マッチ対象のキーワード一覧（最大10個）
+  repeated string trigger_keywords = 3 [(buf.validate.field).repeated.max_items = 10];
+  // 返信テンプレート文（最大280文字）
+  string reply_template = 4 [(buf.validate.field).string.max_len = 280];
+}
+
+// 自動リプライルール新規作成レスポンス
+message CreateAutoReplyRuleResponse {
+  AutoReplyRule rule = 1;
+}
+
+// 自動リプライルール更新リクエスト
+message UpdateAutoReplyRuleRequest {
+  // 更新対象のルールID
+  string id = 1;
+  bool enabled = 2;
+  // マッチ対象のキーワード一覧（最大10個）
+  repeated string trigger_keywords = 3 [(buf.validate.field).repeated.max_items = 10];
+  // 返信テンプレート文（最大280文字）
+  string reply_template = 4 [(buf.validate.field).string.max_len = 280];
+}
+
+// 自動リプライルール更新レスポンス
+message UpdateAutoReplyRuleResponse {
+  AutoReplyRule rule = 1;
+}
+
+// 自動リプライルール削除リクエスト
+message DeleteAutoReplyRuleRequest {
+  // 削除対象のルールID
+  string id = 1;
+}
+
+// 自動リプライルール削除レスポンス
+message DeleteAutoReplyRuleResponse {}
+
+// 自動リプライ送信履歴取得リクエスト
+message GetReplySentLogsRequest {
+  // 取得件数上限（デフォルト20）
+  int32 limit = 1 [(buf.validate.field).int32 = {gte: 1, lte: 100}];
+}
+
+// 自動リプライ送信履歴取得レスポンス
+message GetReplySentLogsResponse {
+  repeated ReplySentLog logs = 1;
+}
+
+// 自動リプライサービス（認証必須）
+service AutoReplyService {
+  // 自動リプライルール一覧を取得
+  rpc ListAutoReplyRules(ListAutoReplyRulesRequest) returns (ListAutoReplyRulesResponse);
+  // 自動リプライルールを新規作成（enabled=trueで作成）
+  rpc CreateAutoReplyRule(CreateAutoReplyRuleRequest) returns (CreateAutoReplyRuleResponse);
+  // 自動リプライルールを更新（有効化/無効化、キーワード変更、テンプレート変更）
+  rpc UpdateAutoReplyRule(UpdateAutoReplyRuleRequest) returns (UpdateAutoReplyRuleResponse);
+  // 自動リプライルールを削除
+  rpc DeleteAutoReplyRule(DeleteAutoReplyRuleRequest) returns (DeleteAutoReplyRuleResponse);
+  // 自動リプライ送信履歴を取得（直近N件）
+  rpc GetReplySentLogs(GetReplySentLogsRequest) returns (GetReplySentLogsResponse);
+}
