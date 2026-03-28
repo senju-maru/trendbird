@@ -70,4 +70,4 @@ frontend/parse_session.*
 # ===== Claude local =====
 .claude/settings.local.json
 .claude/retro/
-.claude/plans/
+.claude/plans/backend/mcp

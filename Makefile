@@ -1,4 +1,4 @@
-.PHONY: help setup start scheduler batch-run frontend-dev backend-dev db-up db-down dev kill-dev seed migrate docker-up docker-down docker-build
+.PHONY: help setup start scheduler batch-run mcp-build frontend-dev backend-dev db-up db-down dev kill-dev seed migrate docker-up docker-down docker-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ scheduler: ## Start the local job scheduler (data collection + notifications)
 
 batch-run: ## Run a single batch job (usage: make batch-run JOB=trend-fetch)
 	cd backend && set -a && . .env && set +a && BATCH_JOB_TYPE=$(JOB) go run ./cmd/batch
+
+mcp-build: ## Build the MCP server binary for Claude Code
+	cd backend && go build -o bin/trendbird-mcp ./cmd/mcp
 
 # =============================================================================
 # Development

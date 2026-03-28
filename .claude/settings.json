@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "trendbird": {
+      "command": "bash",
+      "args": ["-c", "cd backend && [ -f .env ] && set -a && . .env && set +a; go run ./cmd/mcp 2>/dev/null"]
+    }
+  }
+}

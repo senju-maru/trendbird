@@ -1,301 +1,228 @@
 # TrendBird
 
-X (Twitter) のトレンドデータを収集・分析し、AI による投稿文の自動生成やトピック監視を行う Web アプリケーションです。
+**Xの「今バズっていること」を自動で見つけて、AIが投稿文まで作ってくれる。完全無料。**
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
-| Backend | Go 1.25, Connect-RPC, GORM |
-| Database | PostgreSQL 16 |
-| API Schema | Protocol Buffers v3 (Buf) |
-| External APIs | X API v2, Claude API (Anthropic) |
+## 月額0円で、ここまでできる
 
-## Prerequisites
+**トレンドを見つける → 投稿文を作る → 投稿する。この全部を自動でやります。**
 
-以下のツールをインストールしてください。
+- **バズの兆しを自動検知** — 気になるキーワードを登録するだけ。急上昇トレンドを5分ごとに検知して通知
+- **AIが投稿文を自動生成** — トレンドの背景をWeb検索で調べ、カジュアル・速報・分析の3パターンで下書きを作成
+- **予約投稿** — 作った投稿をベストなタイミングで自動公開
+- **自動リプライ・自動DM** — 特定キーワードに反応して自動で返信・DM送信。キャンペーン運用にも対応
+- **投稿の反応を記録** — いいね・リポスト・リプライ数を自動追跡
+- **Claude Code から自然言語で操作** — 「明日の12時に投稿予約して」と話しかけるだけ
 
-### 1. Go (1.25+)
+他のサービスは月額980円〜22,000円。TrendBirdはオープンソースなので **ずっと無料** です。
 
-```bash
-# macOS (Homebrew)
-brew install go
+## 他サービスとの比較
 
-# バージョン確認
-go version
-```
+|  | SocialDog | XTEP | TrendBird |
+|---|:---:|:---:|:---:|
+| **月額** | 980円〜 | 22,000円 | **0円** |
+| トレンド自動検知 | ❌ | ❌ | ✅ |
+| AI投稿文生成 | ❌ | ❌ | ✅ |
+| 予約投稿 | ✅ | ✅ | ✅ |
+| 自動リプライ | ❌ | ✅ | ✅ |
+| 自動DM | ❌ | ✅ | ✅ |
+| キーワード監視 | 一部 | ❌ | ✅ |
+| スパイク通知 | ❌ | ❌ | ✅ |
+| 投稿履歴・分析 | ✅ | ❌ | ✅ |
+| 検知→生成→投稿の自動化 | ❌ | ❌ | ✅ |
+| セルフホスト | ❌ | ❌ | ✅ |
+| API公開 | ❌ | ❌ | **全RPC** |
+| ソースコード | 非公開 | 非公開 | **OSS** |
 
-> 他の OS: https://go.dev/doc/install
+---
 
-### 2. Node.js (20+) & npm
+## 主な機能
 
-```bash
-# macOS (Homebrew)
-brew install node
+### トレンド検知・監視
+- 気になるキーワードを登録すると、5〜10分ごとに自動でチェック
+- 「急にバズり始めた」を統計的に検知してリアルタイム通知
+- 見逃さず、最速でトレンドに乗れる
 
-# または nvm を使う場合
-nvm install 20 && nvm use 20
+### AI投稿文生成
+- トレンドの背景をWebから自動調査
+- カジュアル / 速報 / 分析の3スタイルで投稿文を生成
+- ワンクリックで下書き保存・即時投稿・予約投稿
 
-# バージョン確認
-node -v && npm -v
-```
+### 自動リプライ・自動DM
+- 特定のポストへのリプライを監視し、キーワードに反応して自動返信
+- フォローやリプライに対して自動DM送信
+- 送信履歴を記録し、同じ人に二重送信しない
 
-### 3. PostgreSQL 16
+### 投稿管理
+- 下書き・予約投稿・即時投稿を一画面で管理
+- 投稿ごとの反応（いいね・リポスト・リプライ・閲覧数）を記録
+- 最適な投稿タイミングを提案
 
-Docker を使う方法とローカルインストールの 2 通りがあります。
+---
 
-**方法 A: Docker (推奨)**
+## はじめかた
 
-```bash
-# Docker Desktop をインストール
-# https://www.docker.com/products/docker-desktop/
-docker --version
-```
+### 必要なもの
 
-**方法 B: ローカルインストール**
+- Docker（[インストール](https://www.docker.com/products/docker-desktop/)）
+- X Developer アカウント（[developer.x.com](https://developer.x.com/) で無料取得）
 
-```bash
-# macOS
-brew install postgresql@16
-brew services start postgresql@16
-
-# データベースを作成
-createdb trendbird
-```
-
-## Quick Start
-
-### 1. リポジトリのクローン
+### 最短で動かす（Docker Compose）
 
 ```bash
 git clone https://github.com/trendbird/trendbird.git
 cd trendbird
+cp .env.example .env
 ```
 
-### 2. セットアップ (初回のみ)
+`.env` を開いて、X API のキーを設定:
+
+```bash
+JWT_SECRET=any-random-string-here
+X_CLIENT_ID=your-x-client-id
+X_CLIENT_SECRET=your-x-client-secret
+```
+
+起動:
+
+```bash
+docker compose up -d --build
+```
+
+ブラウザで http://localhost:3000 を開いてXアカウントでログインしてください。
+
+> **Claude Code で操作するには:** ログイン完了後に Claude Code を起動（または再起動）すると、自然言語での操作が使えるようになります。
+
+### ローカル開発で動かす
+
+<details>
+<summary>詳細手順を表示</summary>
+
+#### 追加で必要なもの
+
+- Go 1.25+
+- Node.js 20+
+
+#### セットアップ
 
 ```bash
 make setup
 ```
 
-このコマンドは以下を自動で実行します:
-
-1. フロントエンドの依存関係インストール (`npm install`)
-2. 環境変数テンプレートのコピー (`.env.example` → `.env`)
-3. PostgreSQL の起動 (Docker Compose)
-4. データベースマイグレーション
+自動で以下を実行します:
+1. フロントエンド依存パッケージのインストール
+2. 環境変数ファイルのコピー
+3. PostgreSQL の起動
+4. DBマイグレーション
 5. サンプルデータの投入
 
-### 3. 環境変数の設定
+#### 環境変数の設定
 
-外部 API を利用する機能には API キーが必要です。
+`backend/.env` を編集:
 
-**backend/.env** を編集:
+**必須:**
 
-```bash
-# データベース (setup で自動設定済み)
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/trendbird?sslmode=disable
+| 変数 | 説明 |
+|---|---|
+| `JWT_SECRET` | JWT署名用のランダム文字列 |
+| `X_CLIENT_ID` | X OAuth 2.0 クライアントID |
+| `X_CLIENT_SECRET` | X OAuth 2.0 シークレット |
+| `X_REDIRECT_URI` | コールバックURL（デフォルト: `http://localhost:3000/callback`） |
 
-# JWT シークレット (任意のランダム文字列)
-JWT_SECRET=your-secret-key-here
+**オプション:**
 
-# X (Twitter) OAuth 2.0 — ログイン・投稿機能に必要
-# https://developer.x.com/en/portal/dashboard で取得
-X_CLIENT_ID=your-x-client-id
-X_CLIENT_SECRET=your-x-client-secret
-X_REDIRECT_URI=http://localhost:3000/callback
+| 変数 | 説明 |
+|---|---|
+| `X_BEARER_TOKEN` | X API Bearer Token（ツイート数カウント・検索用） |
+| `ANTHROPIC_API_KEY` | Claude API キー（AI投稿生成用。未設定時はスキップ） |
 
-# Claude API — AI 投稿文生成に必要
-# https://console.anthropic.com/ で取得
-ANTHROPIC_API_KEY=sk-ant-xxx
-```
+> すべてのAPIキーがなくてもアプリは起動します。
 
-> **Note:** すべての API キーがなくてもアプリは起動します。各機能を使うときに対応する API キーを設定してください。
-
-### 4. 起動
+#### 起動
 
 ```bash
 make start
 ```
 
-以下のサーバーが起動します:
-
 | サービス | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
-| Health Check | http://localhost:8080/health |
+|---|---|
+| フロントエンド | http://localhost:3000 |
+| バックエンド API | http://localhost:8080 |
 
-停止するには `Ctrl+C` を押してください。
+#### スケジューラ起動（オプション）
 
-### 5. データ収集スケジューラ (オプション)
-
-トレンドデータの定期収集、通知送信、予約投稿の自動公開を行うスケジューラを起動できます。
+トレンド自動取得・通知・予約投稿の自動実行に必要です:
 
 ```bash
 make scheduler
 ```
 
-スケジューラは以下のジョブを cron スケジュールで自動実行します:
+| ジョブ | 周期 | 内容 |
+|---|---|---|
+| trend-fetch | 12時間ごと | トレンドデータ取得・分析 |
+| spike-notification | 5分ごと | スパイク検知 → 通知 |
+| rising-notification | 10分ごと | 上昇トレンド検知 → 通知 |
+| scheduled-publish | 毎時00分 | 予約投稿の自動公開 |
+| reply-dm-batch | 毎時00分 | 自動DM送信 |
+| auto-reply-batch | 毎時00分 | 自動リプライ送信 |
+| topic-research | trend-fetch後 | AIでトピック背景調査 |
 
-| ジョブ | デフォルト間隔 | 必要な API キー | 説明 |
-|-------|-------------|---------------|------|
-| `trend-fetch` | 12 時間ごと | `X_BEARER_TOKEN` | X のツイート数を収集し、z-score でスパイク検出 |
-| `topic-research` | trend-fetch 後 | `ANTHROPIC_API_KEY` | Claude でトピックの Web 調査 |
-| `spike-notification` | 5 分ごと | — | スパイク検出時にアプリ内通知 |
-| `rising-notification` | 10 分ごと | — | ライジングトレンド通知 |
-| `scheduled-publish` | 毎時 0 分 | X OAuth | 予約投稿の自動公開 |
-| `reply-dm-batch` | 毎時 0 分 | X OAuth | 自動 DM 送信 |
-
-不要なジョブは環境変数で無効化できます:
-
-```bash
-# .env に追記
-SCHEDULER_DISABLED_JOBS=daily-summary,weekly-summary,reply-dm-batch
-```
-
-スケジュールのカスタマイズも可能です:
-
-```bash
-# .env に追記（cron 式）
-SCHEDULE_TREND_FETCH=0 */6 * * *    # 6 時間ごとに変更
-SCHEDULER_TIMEZONE=America/New_York  # タイムゾーン変更
-```
-
-個別ジョブの手動実行:
+ジョブを個別に手動実行:
 
 ```bash
 make batch-run JOB=trend-fetch
 ```
 
----
-
-## Development with Claude Code
-
-このプロジェクトは [Claude Code](https://docs.anthropic.com/en/docs/claude-code) での開発に最適化されています。プロジェクト固有のルール・スキルが `.claude/` ディレクトリに定義されており、Claude Code が自動的に読み込みます。
-
-### インストール
+スケジュールのカスタマイズ:
 
 ```bash
-npm install -g @anthropic-ai/claude-code
+# backend/.env
+SCHEDULE_TREND_FETCH=0 */6 * * *     # 6時間ごとに変更
+SCHEDULER_TIMEZONE=America/New_York   # タイムゾーン変更
+SCHEDULER_DISABLED_JOBS=reply-dm-batch # ジョブ無効化
 ```
 
-### 使い方
+</details>
 
-```bash
-# プロジェクトルートで起動
-cd trendbird
-claude
-```
-
-### できること
-
-```
-> このファイルは何をしている？
-> 認証フローを説明して
-> 新しい API エンドポイントを追加して
-> トピック検索機能を実装して
-> バックエンドの E2E テストを実行して
-> 変更をコミットして
-```
-
-### プロジェクト固有スキル (Slash Commands)
-
-Claude Code 内で使えるコマンドです。プロジェクトのルール・設計方針に沿った回答やコード生成を行います。
+### Makeコマンド一覧
 
 | コマンド | 説明 |
-|---------|------|
-| `/backend-architecture` | バックエンドのクリーンアーキテクチャ設計ガイド |
-| `/design-system` | フロントエンド UI のデザインシステム |
-| `/protobuf-style` | Protobuf 定義のスタイルガイド |
-| `/backend-e2e-test` | バックエンド E2E テストパターン |
-| `/frontend-e2e-test` | フロントエンド E2E テストガイド |
-| `/implementation-plan` | 実装計画書の作成ガイド |
-| `/commit-push` | 変更のコミット & プッシュ |
+|---|---|
+| `make setup` | 初期セットアップ |
+| `make start` | フロントエンド + バックエンド起動 |
+| `make dev` | 開発モード起動（ホットリロード） |
+| `make scheduler` | スケジューラ起動 |
+| `make batch-run JOB=xxx` | バッチジョブ単発実行 |
+| `make migrate` | DBマイグレーション |
+| `make seed` | サンプルデータ投入 |
+| `make db-up` / `db-down` | PostgreSQL起動 / 停止 |
+| `make docker-up` / `docker-down` | Docker全サービス起動 / 停止 |
 
 ---
 
-## Project Structure
+## 技術スタック
 
-```
-trendbird/
-├── backend/                 # Go バックエンド
-│   ├── cmd/
-│   │   ├── server/          #   API サーバーのエントリポイント
-│   │   ├── scheduler/       #   ローカルスケジューラのエントリポイント
-│   │   ├── batch/           #   バッチジョブ手動実行用
-│   │   └── seed/            #   サンプルデータ投入
-│   ├── gen/                 #   Protobuf 生成コード (自動生成)
-│   ├── internal/
-│   │   ├── adapter/         #   ハンドラ・ルーター・ミドルウェア
-│   │   ├── domain/          #   エンティティ・リポジトリIF
-│   │   ├── infrastructure/  #   DB・外部API・認証
-│   │   ├── usecase/         #   ビジネスロジック
-│   │   ├── di/              #   依存性注入
-│   │   └── e2etest/         #   E2E テスト
-│   ├── migrations/          #   SQL マイグレーション
-│   └── .env.example         #   環境変数テンプレート
-├── frontend/                # Next.js フロントエンド
-│   ├── src/
-│   │   ├── app/             #   App Router ページ
-│   │   ├── components/      #   React コンポーネント
-│   │   ├── hooks/           #   カスタムフック
-│   │   ├── lib/             #   ユーティリティ
-│   │   ├── stores/          #   Zustand ストア
-│   │   └── gen/             #   Protobuf 生成コード (自動生成)
-│   ├── e2e/                 #   Playwright E2E テスト
-│   └── .env.local.example   #   環境変数テンプレート
-├── proto/                   # Protobuf 定義ファイル
-│   └── trendbird/v1/        #   API スキーマ
-├── plans.json               # プラン設定 (Single Source of Truth)
-├── docker-compose.yml       # PostgreSQL コンテナ定義
-├── Makefile                 # 開発コマンド
-├── CLAUDE.md                # Claude Code プロジェクト設定
-└── .claude/                 # Claude Code スキル・ルール定義
-```
+| レイヤー | 技術 |
+|---|---|
+| フロントエンド | Next.js 16 / React 19 / TypeScript / Tailwind CSS |
+| バックエンド | Go 1.25 / Connect RPC / GORM |
+| データベース | PostgreSQL 16 |
+| AI | Claude API (Anthropic) |
+| API定義 | Protocol Buffers / Buf |
+| テスト | Playwright (E2E) / Go testing |
 
-## Make Commands
-
-```bash
-make help            # 全コマンドの一覧を表示
-
-# セットアップ & 起動
-make setup           # 初回セットアップ (依存関係 + DB + マイグレーション + シード)
-make start           # フロントエンド + バックエンドを起動
-make scheduler       # データ収集スケジューラを起動
-
-# 個別起動
-make frontend-dev    # フロントエンドのみ起動 (Next.js dev server)
-make backend-dev     # バックエンドのみ起動 (air でホットリロード)
-
-# データベース
-make db-up           # PostgreSQL コンテナを起動
-make db-down         # PostgreSQL コンテナを停止
-make migrate         # マイグレーションを実行
-make seed            # サンプルデータを投入
-
-# バッチジョブ
-make batch-run JOB=trend-fetch  # 個別ジョブを手動実行
-
-# ユーティリティ
-make kill-dev        # 開発ポート (3000, 8080) のプロセスを停止
-```
-
-## Testing
+## テスト
 
 ```bash
 # バックエンド E2E テスト
 cd backend && go test ./internal/e2etest/...
 
-# バックエンド全テスト
-cd backend && go test ./...
-
 # フロントエンド E2E テスト
 cd frontend && npm run e2e
 ```
 
-## Architecture
+## アーキテクチャ
 
 ```
 ┌──────────────┐     Connect-RPC      ┌──────────────┐
@@ -317,6 +244,79 @@ cd frontend && npm run e2e
              └──────────┘   └─────────┘  └─────────┘
 ```
 
-## License
+## プロジェクト構成
+
+```
+trendbird/
+├── backend/
+│   ├── cmd/                 # エントリポイント (server / scheduler / batch / seed)
+│   ├── internal/
+│   │   ├── domain/          # エンティティ・リポジトリIF
+│   │   ├── usecase/         # ビジネスロジック
+│   │   ├── adapter/         # ハンドラ・ルーター
+│   │   ├── infrastructure/  # DB実装・外部API
+│   │   └── di/              # 依存性注入
+│   ├── gen/                 # Protobuf生成コード (Go)
+│   └── migrations/          # SQLマイグレーション
+├── frontend/
+│   ├── src/
+│   │   ├── app/             # Next.js App Router
+│   │   ├── components/      # UIコンポーネント
+│   │   ├── hooks/           # カスタムフック
+│   │   └── gen/             # Protobuf生成コード (TypeScript)
+│   └── e2e/                 # Playwright E2Eテスト
+├── proto/                   # Protobuf API定義
+├── docker-compose.yml
+├── Makefile
+└── CLAUDE.md                # Claude Code設定
+```
+
+## Claude Code から操作する
+
+このプロジェクトは [Claude Code](https://docs.anthropic.com/en/docs/claude-code) に対応しており、**自然言語で全機能を操作**できます。
+
+```bash
+npm install -g @anthropic-ai/claude-code
+cd trendbird
+claude
+```
+
+起動したら、そのまま話しかけるだけ:
+
+```
+> 監視中のトピック一覧を見せて
+> 「AI × 働き方改革」というトピックを追加して
+> AIでトピックの投稿文を生成して
+> 明日の12時に投稿予約して
+> 自動リプライルールを作成して
+> 通知を確認して
+> 下書き一覧を見せて
+```
+
+### 使えるツール一覧
+
+| ツール | できること |
+|---|---|
+| `list_topics` | 監視中のトピック一覧 |
+| `create_topic` | トピック作成（監視開始） |
+| `get_topic` | トピック詳細 |
+| `delete_topic` | トピック削除 |
+| `generate_posts` | AIで投稿文を3パターン生成 |
+| `create_draft` | 下書き作成 |
+| `list_drafts` | 下書き・予約投稿一覧 |
+| `schedule_post` | 投稿予約 |
+| `create_and_schedule_post` | 下書き作成 + 予約を一発で |
+| `publish_post` | 今すぐXに投稿 |
+| `list_post_history` | 投稿履歴（反応数つき） |
+| `list_notifications` | 通知一覧 |
+| `mark_all_notifications_read` | 全通知を既読 |
+| `list_auto_reply_rules` | 自動リプライルール一覧 |
+| `create_auto_reply_rule` | 自動リプライルール作成 |
+| `delete_auto_reply_rule` | 自動リプライルール削除 |
+| `list_auto_dm_rules` | 自動DMルール一覧 |
+| `create_auto_dm_rule` | 自動DMルール作成 |
+| `delete_auto_dm_rule` | 自動DMルール削除 |
+
+## ライセンス
 
 MIT
