@@ -1660,7 +1660,7 @@ mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 
 ## 18. バッチジョブ設計指針
 
-`backend/cmd/batch/main.go` で Cloud Run Job として実行されるバッチジョブの設計ルール。
+`backend/cmd/batch/main.go` で実行されるバッチジョブの設計ルール。ローカルでは `make batch-run JOB=<name>` で手動実行、または `make scheduler` でスケジュール実行する。
 
 ### 18.1 タイムアウト設計
 
@@ -1705,6 +1705,4 @@ if t, ok := jobTimeouts[jobName]; ok {
 | 1 | 外部 API 呼び出しを含む場合、`jobTimeouts` に個別タイムアウトを追加したか |
 | 2 | ジョブが冪等か（同じジョブを2回実行しても整合性が保たれるか） |
 | 3 | ジョブ失敗時にリトライしても安全か（DB への副作用を考慮） |
-| 4 | Cloud Run Job の最大実行時間（`--task-timeout`）と整合しているか |
-
-**注意:** Cloud Run Job のタイムアウト設定（`--task-timeout`）はデプロイ構成に合わせて適切に設定すること。
+| 4 | ローカルスケジューラの `scheduler.go` にジョブを登録したか |
