@@ -26,6 +26,11 @@ func NewSchedulerDB(cfg *config.BatchConfig) (*gorm.DB, error) {
 	return newDB(cfg.DatabaseURL, 10, 5)
 }
 
+// NewMCPDB は MCP サーバー用の PostgreSQL 接続を確立し *gorm.DB を返す。
+func NewMCPDB(cfg *config.MCPConfig) (*gorm.DB, error) {
+	return newDB(cfg.DatabaseURL, 5, 2)
+}
+
 func newDB(dsn string, maxOpen, maxIdle int) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

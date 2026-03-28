@@ -54,6 +54,26 @@ type BatchConfig struct {
 	AnthropicAPIKey string `env:"ANTHROPIC_API_KEY"`
 }
 
+// MCPConfig は MCP サーバー専用の設定を保持する。
+type MCPConfig struct {
+	DatabaseURL     string `env:"DATABASE_URL,required"`
+	MCPUserID       string `env:"MCP_USER_ID"`
+	XClientID       string `env:"X_CLIENT_ID"`
+	XClientSecret   string `env:"X_CLIENT_SECRET"`
+	XRedirectURI    string `env:"X_REDIRECT_URI"`
+	XBearerToken    string `env:"X_BEARER_TOKEN"`
+	AnthropicAPIKey string `env:"ANTHROPIC_API_KEY"`
+}
+
+// LoadMCP は環境変数を読み込み MCPConfig を返す。
+func LoadMCP() (*MCPConfig, error) {
+	cfg := &MCPConfig{}
+	if err := env.Parse(cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
 // LoadBatch は環境変数を読み込み BatchConfig を返す。
 func LoadBatch() (*BatchConfig, error) {
 	cfg := &BatchConfig{}

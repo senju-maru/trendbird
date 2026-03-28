@@ -114,6 +114,17 @@ func (r *userRepository) ListByIDs(ctx context.Context, ids []string) ([]*entity
 	return entities, nil
 }
 
+func (r *userRepository) FindFirst(ctx context.Context) (*entity.User, error) {
+	var m model.User
+	if err := r.getDB(ctx).Order("created_at ASC").First(&m).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NotFound("no users found")
+		}
+		return nil, apperror.Wrap(apperror.CodeInternal, "failed to find first user", err)
+	}
+	return mapper.UserToEntity(&m), nil
+}
+
 func (r *userRepository) CompleteTutorial(ctx context.Context, id string) error {
 	result := r.getDB(ctx).Model(&model.User{}).
 		Where("id = ? AND tutorial_completed = false", id).

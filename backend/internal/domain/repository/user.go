@@ -17,4 +17,6 @@ type UserRepository interface {
 	Delete(ctx context.Context, id string) error
 	// ListByIDs returns users matching the given IDs.
 	ListByIDs(ctx context.Context, ids []string) ([]*entity.User, error)
+	// FindFirst returns the oldest user in the database.
+	FindFirst(ctx context.Context) (*entity.User, error)
 }
