@@ -1,4 +1,4 @@
-.PHONY: help setup start scheduler batch-run frontend-dev backend-dev db-up db-down dev kill-dev seed migrate
+.PHONY: help setup start scheduler batch-run frontend-dev backend-dev db-up db-down dev kill-dev seed migrate docker-up docker-down docker-build
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -84,3 +84,15 @@ migrate: ## Run database migrations
 
 seed: ## Seed database with sample data
 	cd backend && set -a && . .env && set +a && go run ./cmd/seed
+
+# =============================================================================
+# Docker Compose (full-stack)
+# =============================================================================
+docker-up: ## Start all services via Docker Compose (DB + Backend + Scheduler + Frontend)
+	docker compose up -d --build
+
+docker-down: ## Stop all Docker Compose services
+	docker compose down
+
+docker-build: ## Build all Docker images without starting
+	docker compose build

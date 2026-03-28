@@ -9,6 +9,58 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: ./backend
+      target: batch
+    environment:
+      BATCH_JOB_TYPE: migrate
+      DATABASE_URL: postgres://postgres:postgres@db:5432/trendbird?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      target: server
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/trendbird?sslmode=disable
+      ALLOWED_ORIGINS: http://localhost:3000
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  scheduler:
+    build:
+      context: ./backend
+      target: scheduler
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/trendbird?sslmode=disable
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
