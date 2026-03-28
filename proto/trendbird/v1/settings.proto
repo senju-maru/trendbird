@@ -1,0 +1,64 @@
+// ユーザー設定の参照・更新
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+import "trendbird/v1/auth.proto";
+
+// プロフィール更新リクエスト（optional フィールドのみ部分更新）
+message UpdateProfileRequest {
+  optional string email = 1 [(buf.validate.field).string.email = true];
+}
+
+message UpdateProfileResponse {
+  User user = 1 [(buf.validate.field).required = true];
+}
+
+// 通知設定の更新リクエスト（optional フィールドのみ部分更新）
+message UpdateNotificationsRequest {
+  // スパイク検知時の通知
+  optional bool spike_enabled = 1;
+  // 上昇トレンド検知時の通知
+  optional bool rising_enabled = 2;
+  reserved 3;
+}
+
+message UpdateNotificationsResponse {
+  bool updated = 1;
+}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  User user = 1 [(buf.validate.field).required = true];
+}
+
+// 通知設定（読み取り用）
+message NotificationSettings {
+  // スパイク検知時の通知
+  bool spike_enabled = 1;
+  // 上昇トレンド検知時の通知
+  bool rising_enabled = 2;
+  reserved 3;
+}
+
+message GetNotificationSettingsRequest {}
+
+message GetNotificationSettingsResponse {
+  NotificationSettings settings = 1 [(buf.validate.field).required = true];
+}
+
+// ユーザー設定サービス（認証必須）
+service SettingsService {
+  // プロフィール情報を取得
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  // プロフィール情報を更新
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  // 通知設定を取得
+  rpc GetNotificationSettings(GetNotificationSettingsRequest) returns (GetNotificationSettingsResponse);
+  // 通知設定を更新
+  rpc UpdateNotifications(UpdateNotificationsRequest) returns (UpdateNotificationsResponse);
+}

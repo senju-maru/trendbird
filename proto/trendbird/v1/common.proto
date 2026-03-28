@@ -1,0 +1,26 @@
+// 複数サービスで共有される汎用メッセージ定義
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// ページネーションリクエストパラメータ
+message PaginationRequest {
+  // ページ番号（1始まり）
+  int32 page = 1 [(buf.validate.field).int32.gte = 1];
+  // 1ページあたりの取得件数
+  int32 limit = 2 [(buf.validate.field).int32 = {gte: 1, lte: 100}];
+}
+
+// ページネーション結果のメタデータ
+message PaginationResponse {
+  // 全件数
+  int32 total = 1 [(buf.validate.field).int32.gte = 0];
+  // 現在のページ番号
+  int32 page = 2 [(buf.validate.field).int32.gte = 1];
+  // 1ページあたりの件数
+  int32 limit = 3 [(buf.validate.field).int32 = {gte: 1, lte: 100}];
+}

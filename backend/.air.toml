@@ -1,0 +1,18 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # エントリポイント
+  cmd = "go build -o ./tmp/server ./cmd/server"
+  # ビルド成果物の実行コマンド
+  bin = "./tmp/server"
+  # 監視対象の拡張子
+  include_ext = ["go"]
+  # 除外ディレクトリ（生成コード・テスト・マイグレーション）
+  exclude_dir = ["gen", "tmp", "migrations", "internal/e2etest"]
+  # ビルド遅延（連続保存時の無駄なビルドを防止）
+  delay = 1000
+
+[misc]
+  # 終了時に一時ディレクトリを削除
+  clean_on_exit = true

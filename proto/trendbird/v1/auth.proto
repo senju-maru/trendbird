@@ -1,0 +1,78 @@
+// X(Twitter) OAuth 認証とユーザー管理
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// ユーザープロフィール情報
+message User {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
+  // メールアドレス（X OAuth 経由で取得できない場合あり）
+  optional string email = 3 [(buf.validate.field).string.email = true];
+  // プロフィール画像URL（未設定の場合あり）
+  optional string image = 4 [(buf.validate.field).string.uri = true];
+  // X(Twitter) の @ハンドル名
+  string twitter_handle = 5 [(buf.validate.field).string = {
+    min_len: 1,
+    max_len: 15,
+    pattern: "^[A-Za-z0-9_]+$"
+  }];
+  reserved 6;
+  // アカウント作成日時（ISO 8601）
+  string created_at = 7 [(buf.validate.field).string.min_len = 1];
+}
+
+// X OAuth 認証リクエスト
+message XAuthRequest {
+  // X OAuth コールバックで取得した認可コード
+  string oauth_code = 1 [(buf.validate.field).string = {min_len: 1, max_len: 512}];
+}
+
+// X OAuth 認証レスポンス
+message XAuthResponse {
+  User user = 1 [(buf.validate.field).required = true];
+  reserved 2;
+  // チュートリアルが未完了の場合 true
+  bool tutorial_pending = 3;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1 [(buf.validate.field).required = true];
+  reserved 2;
+  // チュートリアルが未完了の場合 true
+  bool tutorial_pending = 3;
+}
+
+// チュートリアル完了リクエスト
+message CompleteTutorialRequest {}
+
+// チュートリアル完了レスポンス
+message CompleteTutorialResponse {}
+
+message DeleteAccountRequest {}
+
+message DeleteAccountResponse {}
+
+// 認証サービス
+service AuthService {
+  // X OAuth 認証（認証不要・パブリック）
+  rpc XAuth(XAuthRequest) returns (XAuthResponse);
+  // ログアウト（認証必須）
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  // 現在のユーザー情報を取得（認証必須）
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  // アカウントを削除（認証必須）
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+  // チュートリアル完了を記録（認証必須）
+  rpc CompleteTutorial(CompleteTutorialRequest) returns (CompleteTutorialResponse);
+}

@@ -1,0 +1,57 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "buf:generate": "cd .. && ./frontend/node_modules/.bin/buf generate",
+    "e2e": "playwright test --config e2e/playwright.config.ts",
+    "e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
+    "e2e:headed": "playwright test --config e2e/playwright.config.ts --headed"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2",
+    "@connectrpc/connect": "^2",
+    "@connectrpc/connect-web": "^2",
+    "@hookform/resolvers": "^5.2.2",
+    "@next/third-parties": "^16.1.6",
+
+    "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
+    "d3": "^7.9.0",
+    "driver.js": "^1.4.0",
+    "framer-motion": "^12.34.0",
+    "lucide-react": "^0.564.0",
+    "next": "16.1.6",
+    "next-auth": "^4.24.13",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1",
+    "@bufbuild/protoc-gen-es": "^2",
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/d3": "^7.4.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "jsdom": "^28.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.0.18"
+  }
+}

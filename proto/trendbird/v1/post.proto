@@ -1,0 +1,203 @@
+// AI による投稿文自動生成
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// 生成する投稿文のスタイル
+enum PostStyle {
+  POST_STYLE_UNSPECIFIED = 0;
+  // カジュアル（親しみやすい口調）
+  POST_STYLE_CASUAL = 1;
+  // 速報（ニュース速報風）
+  POST_STYLE_BREAKING = 2;
+  // 分析（データに基づく考察）
+  POST_STYLE_ANALYSIS = 3;
+}
+
+// AI が生成した投稿文
+message GeneratedPost {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  PostStyle style = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // UIに表示するスタイル名（例: "カジュアル"）
+  string style_label = 3 [(buf.validate.field).string = {min_len: 1, max_len: 50}];
+  // UIに表示するスタイルアイコン名
+  string style_icon = 4 [(buf.validate.field).string = {min_len: 1, max_len: 50}];
+  // 生成された投稿本文
+  string content = 5 [(buf.validate.field).string = {min_len: 1, max_len: 25000}];
+  string topic_id = 6 [(buf.validate.field).string.min_len = 1];
+  reserved 7;
+}
+
+// 投稿文生成リクエスト
+message GeneratePostsRequest {
+  string topic_id = 1 [(buf.validate.field).string.min_len = 1];
+  // 指定しない場合は全スタイルで生成
+  optional PostStyle style = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message GeneratePostsResponse {
+  repeated GeneratedPost posts = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// 投稿のステータス
+// 遷移: DRAFT → SCHEDULED → PUBLISHED
+//                         → FAILED（投稿失敗時）
+enum PostStatus {
+  POST_STATUS_UNSPECIFIED = 0;
+  // 下書き
+  POST_STATUS_DRAFT = 1;
+  // 予約投稿
+  POST_STATUS_SCHEDULED = 2;
+  // 投稿済み
+  POST_STATUS_PUBLISHED = 3;
+  // 投稿失敗
+  POST_STATUS_FAILED = 4;
+}
+
+// 下書き・予約投稿
+message ScheduledPost {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  string content = 2 [(buf.validate.field).string = {min_len: 1, max_len: 25000}];
+  // 関連トピックID（AI生成の場合に設定）
+  optional string topic_id = 3;
+  // 関連トピック名（AI生成の場合に設定）
+  optional string topic_name = 4 [(buf.validate.field).string.max_len = 100];
+  PostStatus status = 5 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // 予約投稿日時（ISO 8601、予約時のみ設定）
+  optional string scheduled_at = 6;
+  // 投稿完了日時（ISO 8601、投稿済みの場合のみ）
+  optional string published_at = 7;
+  // 投稿失敗日時（ISO 8601、失敗時のみ）
+  optional string failed_at = 8;
+  // 投稿失敗時のエラー詳細（失敗時のみ）
+  optional string error_message = 9 [(buf.validate.field).string.max_len = 1000];
+  // 作成日時（ISO 8601）
+  string created_at = 10 [(buf.validate.field).string.min_len = 1];
+  // 更新日時（ISO 8601）
+  string updated_at = 11 [(buf.validate.field).string.min_len = 1];
+  // 文字数
+  int32 character_count = 12 [(buf.validate.field).int32 = {gte: 0, lte: 25000}];
+}
+
+// 投稿履歴
+message PostHistory {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  string content = 2 [(buf.validate.field).string = {min_len: 1, max_len: 25000}];
+  // 関連トピックID（AI生成の場合に設定）
+  optional string topic_id = 3;
+  // 関連トピック名（AI生成の場合に設定）
+  optional string topic_name = 4 [(buf.validate.field).string.max_len = 100];
+  // 投稿日時（ISO 8601）
+  string published_at = 5 [(buf.validate.field).string.min_len = 1];
+  int32 likes = 6 [(buf.validate.field).int32.gte = 0];
+  int32 retweets = 7 [(buf.validate.field).int32.gte = 0];
+  int32 replies = 8 [(buf.validate.field).int32.gte = 0];
+  int32 views = 9 [(buf.validate.field).int32.gte = 0];
+  // ツイートURL（投稿直後は未取得の場合あり）
+  optional string tweet_url = 10 [(buf.validate.field).string.uri = true];
+}
+
+// 投稿統計情報
+message PostStats {
+  // 投稿済みの総数
+  int32 total_published = 1 [(buf.validate.field).int32.gte = 0];
+  // 予約中の総数
+  int32 total_scheduled = 2 [(buf.validate.field).int32.gte = 0];
+  // 下書きの総数
+  int32 total_drafts = 3 [(buf.validate.field).int32.gte = 0];
+  // 失敗した投稿の総数
+  int32 total_failed = 4 [(buf.validate.field).int32.gte = 0];
+  // 今月の投稿数
+  int32 this_month_published = 5 [(buf.validate.field).int32.gte = 0];
+}
+
+message ListDraftsRequest {}
+
+message ListDraftsResponse {
+  repeated ScheduledPost drafts = 1;
+  PostStats stats = 2 [(buf.validate.field).required = true];
+}
+
+message CreateDraftRequest {
+  string content = 1 [(buf.validate.field).string = {min_len: 1, max_len: 25000}];
+  optional string topic_id = 2;
+}
+
+message CreateDraftResponse {
+  ScheduledPost draft = 1 [(buf.validate.field).required = true];
+}
+
+message UpdateDraftRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  string content = 2 [(buf.validate.field).string = {min_len: 1, max_len: 25000}];
+}
+
+message UpdateDraftResponse {
+  ScheduledPost draft = 1 [(buf.validate.field).required = true];
+}
+
+message DeleteDraftRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message DeleteDraftResponse {}
+
+message SchedulePostRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // 予約投稿日時（ISO 8601）
+  string scheduled_at = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message SchedulePostResponse {
+  ScheduledPost draft = 1 [(buf.validate.field).required = true];
+}
+
+message PublishPostRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message PublishPostResponse {
+  PostHistory post = 1 [(buf.validate.field).required = true];
+}
+
+message ListPostHistoryRequest {}
+
+message ListPostHistoryResponse {
+  repeated PostHistory posts = 1;
+}
+
+message GetPostStatsRequest {}
+
+message GetPostStatsResponse {
+  PostStats stats = 1 [(buf.validate.field).required = true];
+}
+
+// 投稿管理サービス（認証必須、プランにより生成回数制限あり）
+service PostService {
+  // トピックに基づいて投稿文を生成
+  // - Free: 月5回まで / Lite: 月50回まで / Pro: 無制限
+  // - スタイル未指定時は全スタイル（casual, breaking, analysis）で生成
+  rpc GeneratePosts(GeneratePostsRequest) returns (GeneratePostsResponse);
+  // 下書き一覧を取得
+  rpc ListDrafts(ListDraftsRequest) returns (ListDraftsResponse);
+  // 下書きを作成
+  rpc CreateDraft(CreateDraftRequest) returns (CreateDraftResponse);
+  // 下書きを更新
+  rpc UpdateDraft(UpdateDraftRequest) returns (UpdateDraftResponse);
+  // 下書きを削除
+  rpc DeleteDraft(DeleteDraftRequest) returns (DeleteDraftResponse);
+  // 投稿を予約
+  rpc SchedulePost(SchedulePostRequest) returns (SchedulePostResponse);
+  // 即時投稿
+  // - X API を呼び出して投稿を実行する（外部副作用あり）
+  // - 投稿失敗時は PostStatus.FAILED となり error_message にエラー詳細が入る
+  rpc PublishPost(PublishPostRequest) returns (PublishPostResponse);
+  // 投稿履歴を取得
+  rpc ListPostHistory(ListPostHistoryRequest) returns (ListPostHistoryResponse);
+  // 投稿統計を取得
+  rpc GetPostStats(GetPostStatsRequest) returns (GetPostStatsResponse);
+}

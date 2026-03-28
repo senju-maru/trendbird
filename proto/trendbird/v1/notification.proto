@@ -1,0 +1,67 @@
+// 通知の管理・配信
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+import "trendbird/v1/topic.proto";
+
+// 通知の種類
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  // トレンド検知通知（スパイク・上昇）
+  NOTIFICATION_TYPE_TREND = 1;
+  // システム通知（メンテナンス・新機能など）
+  NOTIFICATION_TYPE_SYSTEM = 2;
+}
+
+// 通知メッセージ
+// - type=TREND の場合: topic_id, topic_name, topic_status が設定される
+// - type=SYSTEM の場合: action_url, action_label が設定されることがある
+message Notification {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  NotificationType type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string title = 3 [(buf.validate.field).string = {min_len: 1, max_len: 200}];
+  string message = 4 [(buf.validate.field).string = {min_len: 1, max_len: 1000}];
+  // 通知日時（ISO 8601）
+  string timestamp = 5 [(buf.validate.field).string.min_len = 1];
+  bool is_read = 6;
+  // トレンド通知用: 対象トピックID
+  optional string topic_id = 7;
+  // トレンド通知用: トピック名
+  optional string topic_name = 8 [(buf.validate.field).string.max_len = 100];
+  // トレンド通知用: トピックの状態（spike / rising）
+  optional TopicStatus topic_status = 9 [(buf.validate.field).enum.defined_only = true];
+  // 運営通知用: アクションURL
+  optional string action_url = 10 [(buf.validate.field).string.uri = true];
+  // 運営通知用: アクションラベル
+  optional string action_label = 11 [(buf.validate.field).string.max_len = 100];
+}
+
+message ListNotificationsRequest {}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+}
+
+message MarkAsReadRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message MarkAsReadResponse {}
+
+message MarkAllAsReadRequest {}
+
+message MarkAllAsReadResponse {}
+
+// 通知サービス（認証必須）
+service NotificationService {
+  // 通知一覧を取得
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  // 指定した通知を既読にする
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  // 全通知を既読にする
+  rpc MarkAllAsRead(MarkAllAsReadRequest) returns (MarkAllAsReadResponse);
+}

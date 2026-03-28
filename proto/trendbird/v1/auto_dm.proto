@@ -1,0 +1,106 @@
+// リプライに対する自動DM返信の設定・履歴管理
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// 自動DMルールの設定
+// - ユーザーごとにルールを持てる（1:N）
+// - enabled=true かつ trigger_keywords に一致するリプライにテンプレートDMを自動送信
+message AutoDMRule {
+  string id = 1;
+  bool enabled = 2;
+  // マッチ対象のキーワード一覧（大文字小文字無視、最大10個）
+  repeated string trigger_keywords = 3 [(buf.validate.field).repeated.max_items = 10];
+  // 送信するDMのテンプレート文（最大280文字）
+  string template_message = 4 [(buf.validate.field).string.max_len = 280];
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+// DM送信履歴の1レコード
+message DMSentLog {
+  string id = 1;
+  // DM送信先のXユーザーID
+  string recipient_twitter_id = 2;
+  // トリガーとなったリプライのツイートID
+  string reply_tweet_id = 3;
+  // マッチしたキーワード
+  string trigger_keyword = 4;
+  // 実際に送信したDM本文
+  string dm_text = 5;
+  // 送信日時（ISO 8601）
+  string sent_at = 6;
+}
+
+// 自動DMルール一覧取得リクエスト
+message ListAutoDMRulesRequest {}
+
+// 自動DMルール一覧取得レスポンス
+message ListAutoDMRulesResponse {
+  repeated AutoDMRule rules = 1;
+}
+
+// 自動DMルール新規作成リクエスト
+message CreateAutoDMRuleRequest {
+  repeated string trigger_keywords = 1 [(buf.validate.field).repeated.max_items = 10];
+  // 送信するDMのテンプレート文（最大280文字）
+  string template_message = 2 [(buf.validate.field).string.max_len = 280];
+}
+
+// 自動DMルール新規作成レスポンス
+message CreateAutoDMRuleResponse {
+  AutoDMRule rule = 1;
+}
+
+// 自動DMルール更新リクエスト
+message UpdateAutoDMRuleRequest {
+  // 更新対象のルールID
+  string id = 1;
+  bool enabled = 2;
+  repeated string trigger_keywords = 3 [(buf.validate.field).repeated.max_items = 10];
+  // 送信するDMのテンプレート文（最大280文字）
+  string template_message = 4 [(buf.validate.field).string.max_len = 280];
+}
+
+// 自動DMルール更新レスポンス
+message UpdateAutoDMRuleResponse {
+  AutoDMRule rule = 1;
+}
+
+// 自動DMルール削除リクエスト
+message DeleteAutoDMRuleRequest {
+  // 削除対象のルールID
+  string id = 1;
+}
+
+// 自動DMルール削除レスポンス
+message DeleteAutoDMRuleResponse {}
+
+// DM送信履歴取得リクエスト
+message GetDMSentLogsRequest {
+  // 取得件数上限（デフォルト20）
+  int32 limit = 1 [(buf.validate.field).int32 = {gte: 1, lte: 100}];
+}
+
+// DM送信履歴取得レスポンス
+message GetDMSentLogsResponse {
+  repeated DMSentLog logs = 1;
+}
+
+// 自動DMサービス（認証必須）
+service AutoDMService {
+  // 自動DMルール一覧を取得
+  rpc ListAutoDMRules(ListAutoDMRulesRequest) returns (ListAutoDMRulesResponse);
+  // 自動DMルールを新規作成（enabled=trueで作成）
+  rpc CreateAutoDMRule(CreateAutoDMRuleRequest) returns (CreateAutoDMRuleResponse);
+  // 自動DMルールを更新（有効化/無効化、キーワード変更、テンプレート変更）
+  rpc UpdateAutoDMRule(UpdateAutoDMRuleRequest) returns (UpdateAutoDMRuleResponse);
+  // 自動DMルールを削除
+  rpc DeleteAutoDMRule(DeleteAutoDMRuleRequest) returns (DeleteAutoDMRuleResponse);
+  // DM送信履歴を取得（直近N件）
+  rpc GetDMSentLogs(GetDMSentLogsRequest) returns (GetDMSentLogsResponse);
+}

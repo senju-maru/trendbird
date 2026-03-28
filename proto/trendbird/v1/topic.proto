@@ -1,0 +1,262 @@
+// トレンドトピックの監視・管理
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// トピックの現在のトレンド状態
+enum TopicStatus {
+  TOPIC_STATUS_UNSPECIFIED = 0;
+  // スパイク中（z-score が閾値を大幅に超過）
+  TOPIC_STATUS_SPIKE = 1;
+  // 上昇傾向（z-score が閾値付近）
+  TOPIC_STATUS_RISING = 2;
+  // 安定（通常の言及量）
+  TOPIC_STATUS_STABLE = 3;
+}
+
+// スパークライン描画用の時系列データポイント
+message SparklineDataPoint {
+  // ISO 8601 形式のタイムスタンプ
+  string timestamp = 1 [(buf.validate.field).string.min_len = 1];
+  // その時点での言及量
+  int32 value = 2 [(buf.validate.field).int32.gte = 0];
+}
+
+// 過去のスパイク発生記録
+message SpikeHistoryEntry {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // スパイク発生日時（ISO 8601）
+  string timestamp = 2 [(buf.validate.field).string.min_len = 1];
+  // スパイク時の最大 z-score
+  double peak_z_score = 3 [(buf.validate.field).double.gte = 0];
+  TopicStatus status = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // スパイクの概要説明
+  string summary = 5 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
+  // スパイク継続時間（分）
+  int32 duration_minutes = 6 [(buf.validate.field).int32.gte = 1];
+}
+
+// AI が算出した最適投稿タイミング
+message PostingTips {
+  // 投稿に最適な曜日（例: ["月", "水", "金"]）
+  repeated string peak_days = 1 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 7,
+    items: {
+      cel: {
+        id: "peak_days.items",
+        message: "peak_days items must be between 1 and 10 characters",
+        expression: "this.size() >= 1 && this.size() <= 10"
+      }
+    }
+  }];
+  // ピーク時間帯の開始時（0-23）
+  int32 peak_hours_start = 2 [(buf.validate.field).int32 = {gte: 0, lte: 23}];
+  // ピーク時間帯の終了時（0-23）
+  int32 peak_hours_end = 3 [(buf.validate.field).int32 = {gte: 0, lte: 23}];
+  // 次回の推奨投稿時刻（ISO 8601）
+  string next_suggested_time = 4 [(buf.validate.field).string.min_len = 1];
+}
+
+// ジャンルマスターデータ
+message Genre {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // ジャンルの一意識別子（URL 安全な英字ハイフン形式）
+  string slug = 2 [(buf.validate.field).string = {min_len: 1, max_len: 50}];
+  // ジャンルの表示名
+  string label = 3 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
+  // ジャンルの説明文
+  string description = 4;
+  // 表示順（昇順）
+  int32 sort_order = 5;
+}
+
+// 監視対象トピック
+message Topic {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // トピック表示名
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
+  // 検索に使用するキーワード群
+  repeated string keywords = 3 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20,
+    items: {
+      cel: {
+        id: "keywords.items",
+        message: "keyword must be between 1 and 100 characters",
+        expression: "this.size() >= 1 && this.size() <= 100"
+      }
+    }
+  }];
+  // ジャンル slug（genres マスターテーブルの slug）
+  string genre = 4 [(buf.validate.field).string.min_len = 1];
+  TopicStatus status = 5 [(buf.validate.field).enum.defined_only = true];
+  // ベースラインからの変化率（%）
+  double change_percent = 6;
+  // 統計的異常度を示す z-score（高いほどスパイクの可能性大）
+  optional double z_score = 7;
+  // 現在の言及量
+  int32 current_volume = 8 [(buf.validate.field).int32.gte = 0];
+  // 通常時の平均言及量（比較基準）
+  int32 baseline_volume = 9 [(buf.validate.field).int32.gte = 0];
+  // 直近24時間のスパークラインデータ
+  repeated SparklineDataPoint sparkline_data = 10 [(buf.validate.field).repeated.max_items = 288];
+  // トピックの補足コンテキスト
+  optional string context = 11 [(buf.validate.field).string.max_len = 2000];
+  // トピック作成日時（ISO 8601）
+  string created_at = 12 [(buf.validate.field).string.min_len = 1];
+  // AI 生成のコンテキスト要約
+  optional string context_summary = 13 [(buf.validate.field).string.max_len = 1000];
+  reserved 14;
+  // 現在のスパイク開始日時（ISO 8601、スパイク中のみ）
+  optional string spike_started_at = 15;
+  // 直近7日間のスパークラインデータ
+  repeated SparklineDataPoint weekly_sparkline_data = 16 [(buf.validate.field).repeated.max_items = 2016];
+  // 過去のスパイク発生履歴（最大100件）
+  repeated SpikeHistoryEntry spike_history = 17 [(buf.validate.field).repeated.max_items = 100];
+  // AI が算出した投稿タイミングのヒント（データ不足時は未設定）
+  optional PostingTips posting_tips = 18;
+  // このトピックの通知を受け取るか
+  bool notification_enabled = 19;
+}
+
+message ListTopicsRequest {}
+
+message ListTopicsResponse {
+  repeated Topic topics = 1;
+}
+
+// トピック新規作成リクエスト
+message CreateTopicRequest {
+  string name = 1 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
+  repeated string keywords = 2 [(buf.validate.field).repeated = {
+    min_items: 1,
+    max_items: 20,
+    items: {
+      cel: {
+        id: "create_topic_keywords.items",
+        message: "keyword must be between 1 and 100 characters",
+        expression: "this.size() >= 1 && this.size() <= 100"
+      }
+    }
+  }];
+  // ジャンル slug（genres マスターテーブルで存在確認される）
+  string genre = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message CreateTopicResponse {
+  Topic topic = 1 [(buf.validate.field).required = true];
+}
+
+message DeleteTopicRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message DeleteTopicResponse {}
+
+// ジャンル追加リクエスト（冪等: 既に存在する場合も成功を返す）
+message AddGenreRequest {
+  // ジャンル slug（genres マスターテーブルで存在確認される）
+  string genre = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message AddGenreResponse {}
+
+// ジャンル削除リクエスト（関連トピックもカスケード削除される）
+message RemoveGenreRequest {
+  // ジャンル slug（genres マスターテーブルで存在確認される）
+  string genre = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RemoveGenreResponse {}
+
+message ListUserGenresRequest {}
+
+message ListUserGenresResponse {
+  // ユーザーが選択中のジャンル slug 一覧
+  repeated string genres = 1;
+}
+
+message GetTopicRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message GetTopicResponse {
+  Topic topic = 1 [(buf.validate.field).required = true];
+}
+
+// トピックの通知設定更新リクエスト
+message UpdateTopicNotificationRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  bool enabled = 2;
+}
+
+message UpdateTopicNotificationResponse {}
+
+// ジャンル一覧取得リクエスト
+message ListGenresRequest {}
+
+// ジャンル一覧取得レスポンス
+message ListGenresResponse {
+  // sort_order 昇順で返却される全ジャンル
+  repeated Genre genres = 1;
+}
+
+// pg_trgm ファジーサーチで取得されたトピック候補
+message TopicSuggestion {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  // トピック表示名
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 100}];
+  // 検索に使用するキーワード群
+  repeated string keywords = 3;
+  // ジャンル slug
+  string genre = 4 [(buf.validate.field).string.min_len = 1];
+  // ジャンル表示名
+  string genre_label = 5 [(buf.validate.field).string.min_len = 1];
+  // pg_trgm の similarity() 関数が返す類似度スコア（0.0〜1.0）
+  double similarity_score = 6;
+}
+
+// トピック候補のファジーサーチリクエスト
+message SuggestTopicsRequest {
+  // 検索クエリ（空の場合は genre 指定でジャンル別一覧を返却）
+  string query = 1 [(buf.validate.field).string.max_len = 100];
+  // 最大取得件数（デフォルト: 10）
+  int32 limit = 2 [(buf.validate.field).int32 = {gte: 0, lte: 30}];
+  // ジャンル slug でフィルタ（query 未指定時はこのジャンルのトピック一覧を返却）
+  optional string genre = 3;
+}
+
+// トピック候補のファジーサーチレスポンス
+message SuggestTopicsResponse {
+  // 類似度降順でソートされたトピック候補
+  repeated TopicSuggestion suggestions = 1;
+}
+
+// トピック管理サービス（認証必須）
+service TopicService {
+  // 監視中の全トピック一覧を取得
+  rpc ListTopics(ListTopicsRequest) returns (ListTopicsResponse);
+  // トピックの詳細を取得
+  rpc GetTopic(GetTopicRequest) returns (GetTopicResponse);
+  // 新しいトピックを作成して監視を開始
+  rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse);
+  // トピックを削除して監視を停止
+  rpc DeleteTopic(DeleteTopicRequest) returns (DeleteTopicResponse);
+  // トピックの通知設定を更新
+  rpc UpdateTopicNotification(UpdateTopicNotificationRequest) returns (UpdateTopicNotificationResponse);
+  // ジャンルを追加（冪等: 既存の場合も成功を返す）
+  rpc AddGenre(AddGenreRequest) returns (AddGenreResponse);
+  // ジャンルを削除（関連トピックもカスケード削除）
+  rpc RemoveGenre(RemoveGenreRequest) returns (RemoveGenreResponse);
+  // ユーザーが選択中のジャンル一覧を取得
+  rpc ListUserGenres(ListUserGenresRequest) returns (ListUserGenresResponse);
+  // 全ジャンルマスターデータを取得（認証不要でもよいが、サービスに含める）
+  rpc ListGenres(ListGenresRequest) returns (ListGenresResponse);
+  // pg_trgm を使用してトピック名のファジーサーチを実行（ユーザー既存トピックは除外）
+  rpc SuggestTopics(SuggestTopicsRequest) returns (SuggestTopicsResponse);
+}

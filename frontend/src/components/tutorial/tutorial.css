@@ -1,0 +1,132 @@
+/* driver.js ネウモルフィズムテーマオーバーライド */
+
+.driver-overlay {
+  background: transparent !important;
+}
+
+.driver-popover {
+  background: #e4eaf1 !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    5px 5px 5px #becad6,
+    -5px -5px 5px #ffffff,
+    5px -5px 5px #becad6,
+    -5px 5px 5px #ffffff !important;
+  padding: 22px 24px !important;
+  max-width: 340px !important;
+}
+
+.driver-popover-title {
+  font-family: 'Murecho', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #2c3e50 !important;
+  margin-bottom: 8px !important;
+}
+
+.driver-popover-description {
+  font-family: 'Murecho', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #5a7184 !important;
+  line-height: 1.6 !important;
+}
+
+.driver-popover-progress-text {
+  font-family: 'Murecho', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 11px !important;
+  color: #99aab5 !important;
+}
+
+.driver-popover-footer {
+  margin-top: 16px !important;
+}
+
+.driver-popover-prev-btn {
+  font-family: 'Murecho', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  background: #e4eaf1 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 7px 18px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #5a7184 !important;
+  box-shadow:
+    3px 3px 6px #becad6,
+    -3px -3px 6px #ffffff !important;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-shadow: none !important;
+}
+
+.driver-popover-prev-btn:hover {
+  color: #41b1e1 !important;
+}
+
+.driver-popover-prev-btn:active {
+  box-shadow:
+    inset 2px 2px 4px #becad6,
+    inset -2px -2px 4px #ffffff !important;
+}
+
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+  font-family: 'Murecho', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  background: linear-gradient(135deg, #41b1e1, #7acbee) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 7px 18px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  box-shadow: 3px 3px 8px #becad6 !important;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-shadow: none !important;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-close-btn:hover {
+  box-shadow: 4px 4px 10px #becad6 !important;
+}
+
+.driver-popover-next-btn:active,
+.driver-popover-close-btn:active {
+  box-shadow:
+    inset 3px 3px 6px #2a8fbd,
+    inset -3px -3px 6px #7acbee !important;
+}
+
+.driver-popover-arrow-side-left .driver-popover-arrow,
+.driver-popover-arrow-side-right .driver-popover-arrow,
+.driver-popover-arrow-side-top .driver-popover-arrow,
+.driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-color: #e4eaf1 !important;
+}
+
+/* finish フェーズ: バウンス登場 + グローアクセント */
+@keyframes finish-bounce-in {
+  0%   { opacity: 0; transform: scale(0.85) translateY(12px); }
+  50%  { opacity: 1; transform: scale(1.04) translateY(-4px); }
+  70%  { transform: scale(0.98) translateY(1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.finish-celebration .driver-popover {
+  animation: finish-bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow:
+    10px 10px 20px #becad6,
+    -10px -10px 20px #ffffff,
+    0 0 6px rgba(65, 177, 225, 0.05) !important;
+}
+
+/* prefers-reduced-motion 対応 */
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover,
+  .driver-overlay,
+  .driver-active-element {
+    transition: none !important;
+    animation: none !important;
+  }
+}

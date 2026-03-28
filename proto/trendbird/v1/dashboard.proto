@@ -1,0 +1,69 @@
+// ダッシュボード画面用のデータ取得
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// アクティビティの種別
+enum ActivityType {
+  ACTIVITY_TYPE_UNSPECIFIED = 0;
+  // トピックのスパイクを検知
+  ACTIVITY_TYPE_SPIKE = 1;
+  // トピックの上昇傾向を検知
+  ACTIVITY_TYPE_RISING = 2;
+  // AI が投稿文を生成
+  ACTIVITY_TYPE_AI_GENERATED = 3;
+  // X に投稿を実行
+  ACTIVITY_TYPE_POSTED = 4;
+  // トピックを追加
+  ACTIVITY_TYPE_TOPIC_ADDED = 5;
+  // トピックを削除
+  ACTIVITY_TYPE_TOPIC_REMOVED = 6;
+}
+
+// アクティビティフィードのエントリ
+message Activity {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  ActivityType type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // 関連するトピック名
+  string topic_name = 3 [(buf.validate.field).string.max_len = 100];
+  string description = 4 [(buf.validate.field).string = {min_len: 1, max_len: 500}];
+  // 発生日時（ISO 8601）
+  string timestamp = 5 [(buf.validate.field).string.min_len = 1];
+}
+
+// ダッシュボードの統計サマリー
+message DashboardStats {
+  // スパイク検知回数
+  int32 detections = 1 [(buf.validate.field).int32.gte = 0];
+  // AI 投稿文の生成回数
+  int32 generations = 2 [(buf.validate.field).int32.gte = 0];
+  // フィールド番号 3, 4 は予約済み（将来の accuracy / copies 用）
+  reserved 3, 4;
+  reserved "accuracy", "copies";
+  // 最後にトレンドをチェックした日時（ISO 8601）。トピック未登録の場合は空文字
+  optional string last_checked_at = 5;
+}
+
+message GetActivitiesRequest {}
+
+message GetActivitiesResponse {
+  repeated Activity activities = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  DashboardStats stats = 1 [(buf.validate.field).required = true];
+}
+
+// ダッシュボードサービス（認証必須）
+service DashboardService {
+  // 最近のアクティビティ一覧を取得
+  rpc GetActivities(GetActivitiesRequest) returns (GetActivitiesResponse);
+  // ダッシュボードの統計サマリーを取得
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}

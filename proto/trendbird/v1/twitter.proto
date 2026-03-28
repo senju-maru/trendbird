@@ -1,0 +1,61 @@
+// X(Twitter) API 連携管理
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// Twitter/X 接続状態
+// 遷移: DISCONNECTED → CONNECTING → CONNECTED
+//                                 → ERROR（接続失敗時）
+enum TwitterConnectionStatus {
+  TWITTER_CONNECTION_STATUS_UNSPECIFIED = 0;
+  // 未接続
+  TWITTER_CONNECTION_STATUS_DISCONNECTED = 1;
+  // 接続テスト中
+  TWITTER_CONNECTION_STATUS_CONNECTING = 2;
+  // 接続済み
+  TWITTER_CONNECTION_STATUS_CONNECTED = 3;
+  // エラー
+  TWITTER_CONNECTION_STATUS_ERROR = 4;
+}
+
+// Twitter/X 接続情報
+message TwitterConnectionInfo {
+  TwitterConnectionStatus status = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // 接続日時（ISO 8601）
+  optional string connected_at = 2;
+  // 最終テスト日時（ISO 8601）
+  optional string last_tested_at = 3;
+  // エラーメッセージ
+  optional string error_message = 4 [(buf.validate.field).string.max_len = 1000];
+}
+
+message GetConnectionInfoRequest {}
+
+message GetConnectionInfoResponse {
+  TwitterConnectionInfo info = 1 [(buf.validate.field).required = true];
+}
+
+// 接続テストリクエスト（App-only Bearer Token の疎通確認、トークンはサーバー側の環境変数から取得）
+message TestConnectionRequest {}
+
+message TestConnectionResponse {
+  TwitterConnectionInfo info = 1 [(buf.validate.field).required = true];
+}
+
+message DisconnectTwitterRequest {}
+
+message DisconnectTwitterResponse {}
+
+// Twitter/X 連携サービス（認証必須）
+service TwitterService {
+  // 現在の接続情報を取得
+  rpc GetConnectionInfo(GetConnectionInfoRequest) returns (GetConnectionInfoResponse);
+  // App-only Bearer Token の疎通をテスト（X API に実際にリクエストして検証）
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse);
+  // Twitter連携を解除
+  rpc DisconnectTwitter(DisconnectTwitterRequest) returns (DisconnectTwitterResponse);
+}

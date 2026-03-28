@@ -1,0 +1,73 @@
+# ===== Frontend (Next.js) =====
+
+# dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+
+# testing
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+
+# next.js
+frontend/.next/
+frontend/out/
+
+# production
+frontend/build/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+frontend/.env*
+
+# vercel
+frontend/.vercel/
+
+# typescript
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# ===== Backend (Go) =====
+backend/.env*
+backend/tmp/
+backend/batch
+backend/scheduler
+backend/seed
+backend/server
+*.test
+
+# ===== Infra =====
+cloud-sql-proxy
+
+# ===== General =====
+.DS_Store
+*.pem
+.vercel
+memory/
+
+# ===== Analytics =====
+analytics/
+
+# ===== Marketing & Infra (OSS excluded) =====
+marketing/
+infra/
+
+# ===== Temporary scripts =====
+backend/_parse_session.py
+frontend/parse_session.*
+
+# ===== Claude local =====
+.claude/settings.local.json
+.claude/retro/
+.claude/plans/
