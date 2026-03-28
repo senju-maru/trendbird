@@ -23,6 +23,7 @@ type Container struct {
 	// Connect RPC handlers
 	AuthHandler         *handler.AuthHandler
 	AutoDMHandler       *handler.AutoDMHandler
+	AutoReplyHandler    *handler.AutoReplyHandler
 	DashboardHandler    *handler.DashboardHandler
 	NotificationHandler *handler.NotificationHandler
 	PostHandler         *handler.PostHandler
@@ -91,6 +92,9 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	topicUC := usecase.NewTopicUsecase(topicRepo, userTopicRepo, userGenreRepo, genreRepo, activityRepo, topicVolumeRepo, spikeHistRepo, claudeClient, twitterClient, cfg.XBearerToken, txManager)
 	twitterUC := usecase.NewTwitterUsecase(tweetConnRepo, twitterClient)
 	autoDMUC := usecase.NewAutoDMUsecase(autoDMRuleRepo, dmSentLogRepo)
+	autoReplyRuleRepo := repository.NewAutoReplyRuleRepository(db)
+	replySentLogRepo := repository.NewReplySentLogRepository(db)
+	autoReplyUC := usecase.NewAutoReplyUsecase(autoReplyRuleRepo, replySentLogRepo)
 
 	// --- Handlers ---
 	secure := cfg.CookieSecure
@@ -98,6 +102,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	return &Container{
 		AuthHandler:         handler.NewAuthHandler(authUC, secure, cfg.CookieDomain),
 		AutoDMHandler:       handler.NewAutoDMHandler(autoDMUC),
+		AutoReplyHandler:    handler.NewAutoReplyHandler(autoReplyUC),
 		DashboardHandler:    handler.NewDashboardHandler(dashboardUC),
 		NotificationHandler: handler.NewNotificationHandler(notificationUC),
 		PostHandler:         handler.NewPostHandler(postUC),
@@ -165,11 +170,15 @@ func NewContainerForTest(deps TestDeps) *Container {
 	topicUC := usecase.NewTopicUsecase(topicRepo, userTopicRepo, userGenreRepo, genreRepo, activityRepo, topicVolumeRepo, spikeHistRepo, deps.AIGW, deps.TwitterGW, "", txManager)
 	twitterUC := usecase.NewTwitterUsecase(tweetConnRepo, deps.TwitterGW)
 	autoDMUC := usecase.NewAutoDMUsecase(autoDMRuleRepo, dmSentLogRepo)
+	autoReplyRuleRepo := repository.NewAutoReplyRuleRepository(db)
+	replySentLogRepo := repository.NewReplySentLogRepository(db)
+	autoReplyUC := usecase.NewAutoReplyUsecase(autoReplyRuleRepo, replySentLogRepo)
 
 	// --- Handlers (secure=false: httptest は TLS なし) ---
 	return &Container{
 		AuthHandler:         handler.NewAuthHandler(authUC, false, ""),
 		AutoDMHandler:       handler.NewAutoDMHandler(autoDMUC),
+		AutoReplyHandler:    handler.NewAutoReplyHandler(autoReplyUC),
 		DashboardHandler:    handler.NewDashboardHandler(dashboardUC),
 		NotificationHandler: handler.NewNotificationHandler(notificationUC),
 		PostHandler:         handler.NewPostHandler(postUC),

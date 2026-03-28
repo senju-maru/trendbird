@@ -348,3 +348,60 @@ CREATE TABLE IF NOT EXISTS topic_research (
 
 CREATE INDEX IF NOT EXISTS idx_topic_research_topic_id    ON topic_research (topic_id);
 CREATE INDEX IF NOT EXISTS idx_topic_research_searched_at ON topic_research (searched_at DESC);
+
+-- =============================================================================
+-- 21. auto_reply_rules
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS auto_reply_rules (
+    id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id               UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    enabled               BOOLEAN     NOT NULL DEFAULT FALSE,
+    target_tweet_id       VARCHAR(64) NOT NULL,
+    target_tweet_text     TEXT        NOT NULL DEFAULT '',
+    trigger_keywords      TEXT[]      NOT NULL DEFAULT '{}',
+    reply_template        TEXT        NOT NULL DEFAULT '',
+    last_checked_reply_id VARCHAR(64),
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX  IF NOT EXISTS idx_auto_reply_rules_user_id ON auto_reply_rules (user_id);
+CREATE INDEX  IF NOT EXISTS idx_auto_reply_rules_enabled ON auto_reply_rules (enabled) WHERE enabled = TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_auto_reply_rules_user_tweet ON auto_reply_rules (user_id, target_tweet_id);
+
+-- =============================================================================
+-- 22. reply_sent_logs
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS reply_sent_logs (
+    id                   UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id              UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rule_id              UUID         NOT NULL REFERENCES auto_reply_rules(id) ON DELETE CASCADE,
+    original_tweet_id    VARCHAR(64)  NOT NULL,
+    original_author_id   VARCHAR(64)  NOT NULL,
+    reply_tweet_id       VARCHAR(64)  NOT NULL,
+    trigger_keyword      VARCHAR(255) NOT NULL,
+    reply_text           TEXT         NOT NULL,
+    sent_at              TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_reply_sent_logs UNIQUE (original_tweet_id, original_author_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reply_sent_logs_user_id ON reply_sent_logs (user_id);
+CREATE INDEX IF NOT EXISTS idx_reply_sent_logs_sent_at ON reply_sent_logs (user_id, sent_at DESC);
+
+-- =============================================================================
+-- 23. reply_pending_queue
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS reply_pending_queue (
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id             UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rule_id             UUID         NOT NULL REFERENCES auto_reply_rules(id) ON DELETE CASCADE,
+    original_tweet_id   VARCHAR(64)  NOT NULL,
+    original_author_id  VARCHAR(64)  NOT NULL,
+    trigger_keyword     VARCHAR(255) NOT NULL,
+    status              INT          NOT NULL DEFAULT 1,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_reply_pending UNIQUE (original_tweet_id, original_author_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reply_pending_queue_status  ON reply_pending_queue (status) WHERE status = 1;
+CREATE INDEX IF NOT EXISTS idx_reply_pending_queue_user_id ON reply_pending_queue (user_id);

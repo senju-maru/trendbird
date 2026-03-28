@@ -1,6 +1,9 @@
 -- 000001_create_tables.down.sql
 -- Drop all tables in reverse dependency order
 
+DROP TABLE IF EXISTS reply_pending_queue CASCADE;
+DROP TABLE IF EXISTS reply_sent_logs    CASCADE;
+DROP TABLE IF EXISTS auto_reply_rules   CASCADE;
 DROP TABLE IF EXISTS topic_research     CASCADE;
 DROP TABLE IF EXISTS dm_pending_queue    CASCADE;
 DROP TABLE IF EXISTS dm_sent_logs        CASCADE;

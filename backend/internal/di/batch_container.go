@@ -18,6 +18,7 @@ type BatchContainer struct {
 	TrendFetchUC                *usecase.TrendFetchUsecase
 	ScheduledPublishUC          *usecase.ScheduledPublishUsecase
 	AutoDMBatchUC               *usecase.AutoDMBatchUsecase
+	AutoReplyBatchUC            *usecase.AutoReplyBatchUsecase
 	TopicResearchCollectionUC   *usecase.TopicResearchCollectionUsecase
 
 	DB *gorm.DB
@@ -89,12 +90,22 @@ func newBatchContainer(cfg *config.BatchConfig, db *gorm.DB) (*BatchContainer, e
 		tweetConnRepo, userRepo, oauthTwitterClient,
 	)
 
+	// --- Auto Reply Batch ---
+	autoReplyRuleRepo := repository.NewAutoReplyRuleRepository(db)
+	replySentLogRepo := repository.NewReplySentLogRepository(db)
+	replyPendingRepo := repository.NewReplyPendingQueueRepository(db)
+	autoReplyBatchUC := usecase.NewAutoReplyBatchUsecase(
+		autoReplyRuleRepo, replySentLogRepo, replyPendingRepo,
+		tweetConnRepo, userRepo, oauthTwitterClient,
+	)
+
 	return &BatchContainer{
 		SpikeNotificationUC:       spikeNotificationUC,
 		RisingNotificationUC:      risingNotificationUC,
 		TrendFetchUC:              trendFetchUC,
 		ScheduledPublishUC:        scheduledPublishUC,
 		AutoDMBatchUC:             autoDMBatchUC,
+		AutoReplyBatchUC:          autoReplyBatchUC,
 		TopicResearchCollectionUC: topicResearchCollectionUC,
 		DB:                        db,
 	}, nil

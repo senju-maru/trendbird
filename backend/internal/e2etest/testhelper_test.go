@@ -42,6 +42,7 @@ type testEnv struct {
 	settingsClient     trendbirdv1connect.SettingsServiceClient
 	topicClient        trendbirdv1connect.TopicServiceClient
 	twitterClient      trendbirdv1connect.TwitterServiceClient
+	autoReplyClient    trendbirdv1connect.AutoReplyServiceClient
 
 	// Mocks
 	mockTwitter *mockTwitterGateway
@@ -92,6 +93,7 @@ func setupTest(t *testing.T) *testEnv {
 		settingsClient:     trendbirdv1connect.NewSettingsServiceClient(httpClient, baseURL),
 		topicClient:        trendbirdv1connect.NewTopicServiceClient(httpClient, baseURL),
 		twitterClient:      trendbirdv1connect.NewTwitterServiceClient(httpClient, baseURL),
+		autoReplyClient:    trendbirdv1connect.NewAutoReplyServiceClient(httpClient, baseURL),
 	}
 
 	return env
@@ -105,6 +107,7 @@ func truncateAll(t *testing.T, db *gorm.DB) {
 	t.Helper()
 
 	const query = `TRUNCATE TABLE
+		reply_sent_logs, reply_pending_queue, auto_reply_rules,
 		dm_sent_logs, dm_pending_queue, auto_dm_rules,
 		user_notifications, notifications, activities, ai_generation_logs, generated_posts, posts,
 		posting_tips, spike_histories, topic_research, topic_volumes, user_topics, topics, user_genres, genres,
@@ -812,6 +815,102 @@ func seedDMPendingQueue(t *testing.T, db *gorm.DB, userID string, ruleID string,
 	}
 	if err := db.Create(q).Error; err != nil {
 		t.Fatalf("seedDMPendingQueue: %v", err)
+	}
+	return q
+}
+
+// --- seedAutoReplyRule ---
+
+type autoReplyRuleOption func(*model.AutoReplyRule)
+
+func withAutoReplyEnabled(v bool) autoReplyRuleOption {
+	return func(r *model.AutoReplyRule) { r.Enabled = v }
+}
+
+func withAutoReplyTargetTweetID(id string) autoReplyRuleOption {
+	return func(r *model.AutoReplyRule) { r.TargetTweetID = id }
+}
+
+func withAutoReplyKeywords(keywords []string) autoReplyRuleOption {
+	return func(r *model.AutoReplyRule) { r.TriggerKeywords = model.StringArray(keywords) }
+}
+
+func withAutoReplyTemplate(tmpl string) autoReplyRuleOption {
+	return func(r *model.AutoReplyRule) { r.ReplyTemplate = tmpl }
+}
+
+func seedAutoReplyRule(t *testing.T, db *gorm.DB, userID string, opts ...autoReplyRuleOption) *model.AutoReplyRule {
+	t.Helper()
+
+	n := nextSeq()
+	r := &model.AutoReplyRule{
+		UserID:          userID,
+		Enabled:         true,
+		TargetTweetID:   fmt.Sprintf("target-tweet-%d", n),
+		TargetTweetText: fmt.Sprintf("Target tweet text %d", n),
+		TriggerKeywords: model.StringArray{"keyword" + fmt.Sprintf("%d", n)},
+		ReplyTemplate:   fmt.Sprintf("Auto reply template %d", n),
+	}
+	for _, o := range opts {
+		o(r)
+	}
+	if err := db.Create(r).Error; err != nil {
+		t.Fatalf("seedAutoReplyRule: %v", err)
+	}
+	return r
+}
+
+// --- seedReplySentLog ---
+
+func seedReplySentLog(t *testing.T, db *gorm.DB, userID string, ruleID string) *model.ReplySentLog {
+	t.Helper()
+
+	n := nextSeq()
+	l := &model.ReplySentLog{
+		UserID:           userID,
+		RuleID:           ruleID,
+		OriginalTweetID:  fmt.Sprintf("original-tweet-%d", n),
+		OriginalAuthorID: fmt.Sprintf("author-%d", n),
+		ReplyTweetID:     fmt.Sprintf("reply-tweet-%d", n),
+		TriggerKeyword:   "keyword",
+		ReplyText:        fmt.Sprintf("Reply text %d", n),
+		SentAt:           time.Now(),
+	}
+	if err := db.Create(l).Error; err != nil {
+		t.Fatalf("seedReplySentLog: %v", err)
+	}
+	return l
+}
+
+// --- seedReplyPendingQueue ---
+
+type replyPendingQueueOption func(*model.ReplyPendingQueue)
+
+func withReplyPendingOriginalTweetID(id string) replyPendingQueueOption {
+	return func(q *model.ReplyPendingQueue) { q.OriginalTweetID = id }
+}
+
+func withReplyPendingOriginalAuthorID(id string) replyPendingQueueOption {
+	return func(q *model.ReplyPendingQueue) { q.OriginalAuthorID = id }
+}
+
+func seedReplyPendingQueue(t *testing.T, db *gorm.DB, userID string, ruleID string, opts ...replyPendingQueueOption) *model.ReplyPendingQueue {
+	t.Helper()
+
+	n := nextSeq()
+	q := &model.ReplyPendingQueue{
+		UserID:           userID,
+		RuleID:           ruleID,
+		OriginalTweetID:  fmt.Sprintf("original-tweet-%d", n),
+		OriginalAuthorID: fmt.Sprintf("author-%d", n),
+		TriggerKeyword:   "keyword",
+		Status:           1, // Pending
+	}
+	for _, o := range opts {
+		o(q)
+	}
+	if err := db.Create(q).Error; err != nil {
+		t.Fatalf("seedReplyPendingQueue: %v", err)
 	}
 	return q
 }

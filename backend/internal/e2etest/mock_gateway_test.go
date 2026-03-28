@@ -22,6 +22,7 @@ type mockTwitterGateway struct {
 	SearchRecentTweetsFn    func(ctx context.Context, accessToken string, input gateway.SearchTweetsInput) ([]gateway.Tweet, error)
 	GetTweetCountsFn        func(ctx context.Context, accessToken string, query string, startTime time.Time) ([]gateway.TweetCountDataPoint, error)
 	PostTweetFn             func(ctx context.Context, accessToken string, text string) (string, error)
+	PostReplyFn             func(ctx context.Context, accessToken string, text string, inReplyToTweetID string) (string, error)
 	DeleteTweetFn           func(ctx context.Context, accessToken string, tweetID string) error
 	VerifyCredentialsFn     func(ctx context.Context, accessToken string) error
 	SendDirectMessageFn     func(ctx context.Context, accessToken string, recipientID string, text string) error
@@ -71,6 +72,9 @@ func newMockTwitterGateway() *mockTwitterGateway {
 		PostTweetFn: func(_ context.Context, _ string, _ string) (string, error) {
 			return "tweet-id-123", nil
 		},
+		PostReplyFn: func(_ context.Context, _ string, _ string, _ string) (string, error) {
+			return "reply-tweet-id-123", nil
+		},
 		DeleteTweetFn: func(_ context.Context, _ string, _ string) error {
 			return nil
 		},
@@ -119,6 +123,11 @@ func (m *mockTwitterGateway) GetTweetCounts(ctx context.Context, accessToken str
 func (m *mockTwitterGateway) PostTweet(ctx context.Context, accessToken string, text string) (string, error) {
 	m.Calls.Add(1)
 	return m.PostTweetFn(ctx, accessToken, text)
+}
+
+func (m *mockTwitterGateway) PostReply(ctx context.Context, accessToken string, text string, inReplyToTweetID string) (string, error) {
+	m.Calls.Add(1)
+	return m.PostReplyFn(ctx, accessToken, text, inReplyToTweetID)
 }
 
 func (m *mockTwitterGateway) DeleteTweet(ctx context.Context, accessToken string, tweetID string) error {

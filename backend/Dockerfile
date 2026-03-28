@@ -10,6 +10,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /server ./cmd/server
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /batch ./cmd/batch
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /scheduler ./cmd/scheduler
 
 # ---- Server Runtime ----
 FROM gcr.io/distroless/static-debian12:nonroot AS server
@@ -28,3 +29,11 @@ COPY --from=builder /batch /batch
 COPY --from=builder /app/migrations /migrations
 
 ENTRYPOINT ["/batch"]
+
+# ---- Scheduler Runtime ----
+FROM gcr.io/distroless/static-debian12:nonroot AS scheduler
+
+COPY --from=builder /scheduler /scheduler
+COPY --from=builder /app/migrations /migrations
+
+ENTRYPOINT ["/scheduler"]

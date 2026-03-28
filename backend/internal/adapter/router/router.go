@@ -45,6 +45,7 @@ func New(c *di.Container) http.Handler {
 	services := []route{
 		wrap(trendbirdv1connect.NewAuthServiceHandler(c.AuthHandler, interceptors)),
 		wrap(trendbirdv1connect.NewAutoDMServiceHandler(c.AutoDMHandler, interceptors)),
+		wrap(trendbirdv1connect.NewAutoReplyServiceHandler(c.AutoReplyHandler, interceptors)),
 		wrap(trendbirdv1connect.NewDashboardServiceHandler(c.DashboardHandler, interceptors)),
 		wrap(trendbirdv1connect.NewNotificationServiceHandler(c.NotificationHandler, interceptors)),
 		wrap(trendbirdv1connect.NewPostServiceHandler(c.PostHandler, interceptors)),

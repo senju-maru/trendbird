@@ -142,6 +142,7 @@ func buildJobs(cfg *SchedulerConfig, c *di.BatchContainer) []*Job {
 		{Name: "rising-notification", Fn: c.RisingNotificationUC.Execute, Schedule: cfg.RisingNotificationSchedule, Timeout: 10 * time.Minute},
 		{Name: "scheduled-publish", Fn: c.ScheduledPublishUC.Execute, Schedule: cfg.ScheduledPublishSchedule, Timeout: 10 * time.Minute},
 		{Name: "reply-dm-batch", Fn: c.AutoDMBatchUC.Execute, Schedule: cfg.ReplyDMBatchSchedule, Timeout: 10 * time.Minute},
+		{Name: "auto-reply-batch", Fn: c.AutoReplyBatchUC.Execute, Schedule: cfg.AutoReplyBatchSchedule, Timeout: 10 * time.Minute},
 	}
 }
 

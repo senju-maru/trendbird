@@ -159,7 +159,7 @@ func (c *TwitterClient) GetUserInfo(ctx context.Context, accessToken string) (*g
 func (c *TwitterClient) SearchRecentTweets(ctx context.Context, accessToken string, input gateway.SearchTweetsInput) ([]gateway.Tweet, error) {
 	params := url.Values{}
 	params.Set("query", input.Query)
-	params.Set("tweet.fields", "id,text,author_id,created_at,public_metrics")
+	params.Set("tweet.fields", "id,text,author_id,conversation_id,created_at,public_metrics")
 	params.Set("expansions", "author_id")
 	params.Set("user.fields", "name,username")
 	if input.MaxResults > 0 {
@@ -187,11 +187,12 @@ func (c *TwitterClient) SearchRecentTweets(ctx context.Context, accessToken stri
 
 	var resp struct {
 		Data []struct {
-			ID            string `json:"id"`
-			Text          string `json:"text"`
-			AuthorID      string `json:"author_id"`
-			CreatedAt     string `json:"created_at"`
-			PublicMetrics struct {
+			ID             string `json:"id"`
+			Text           string `json:"text"`
+			AuthorID       string `json:"author_id"`
+			ConversationID string `json:"conversation_id"`
+			CreatedAt      string `json:"created_at"`
+			PublicMetrics  struct {
 				RetweetCount    int `json:"retweet_count"`
 				ReplyCount      int `json:"reply_count"`
 				LikeCount       int `json:"like_count"`
@@ -221,10 +222,11 @@ func (c *TwitterClient) SearchRecentTweets(ctx context.Context, accessToken stri
 	for _, d := range resp.Data {
 		createdAt, _ := time.Parse(time.RFC3339, d.CreatedAt)
 		t := gateway.Tweet{
-			ID:        d.ID,
-			Text:      d.Text,
-			AuthorID:  d.AuthorID,
-			CreatedAt: createdAt,
+			ID:             d.ID,
+			Text:           d.Text,
+			AuthorID:       d.AuthorID,
+			ConversationID: d.ConversationID,
+			CreatedAt:      createdAt,
 			Metrics: gateway.TweetMetrics{
 				RetweetCount:    d.PublicMetrics.RetweetCount,
 				ReplyCount:      d.PublicMetrics.ReplyCount,
@@ -304,6 +306,35 @@ func (c *TwitterClient) PostTweet(ctx context.Context, accessToken string, text 
 
 	tweetURL := fmt.Sprintf("https://x.com/i/status/%s", resp.Data.ID)
 	return tweetURL, nil
+}
+
+func (c *TwitterClient) PostReply(ctx context.Context, accessToken string, text string, inReplyToTweetID string) (string, error) {
+	payload := map[string]any{
+		"text": text,
+		"reply": map[string]string{
+			"in_reply_to_tweet_id": inReplyToTweetID,
+		},
+	}
+	jsonBody, err := json.Marshal(payload)
+	if err != nil {
+		return "", apperror.Wrap(apperror.CodeInternal, "failed to marshal reply body", err)
+	}
+
+	body, err := c.doRequest(ctx, http.MethodPost, twitterBaseURL+"/2/tweets", jsonBody, "Bearer "+accessToken)
+	if err != nil {
+		return "", err
+	}
+
+	var resp struct {
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return "", apperror.Wrap(apperror.CodeInternal, "failed to parse post reply response", err)
+	}
+
+	return resp.Data.ID, nil
 }
 
 func (c *TwitterClient) DeleteTweet(ctx context.Context, accessToken string, tweetID string) error {

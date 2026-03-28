@@ -86,6 +86,8 @@ func run(ctx context.Context, container *di.BatchContainer, jobType string) erro
 		return container.ScheduledPublishUC.Execute(ctx)
 	case "reply-dm-batch":
 		return container.AutoDMBatchUC.Execute(ctx)
+	case "auto-reply-batch":
+		return container.AutoReplyBatchUC.Execute(ctx)
 	case "topic-research":
 		return container.TopicResearchCollectionUC.Execute(ctx)
 	default:

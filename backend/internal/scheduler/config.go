@@ -16,6 +16,7 @@ type SchedulerConfig struct {
 	RisingNotificationSchedule string `env:"SCHEDULE_RISING_NOTIFICATION" envDefault:"*/10 * * * *"`
 	ScheduledPublishSchedule   string `env:"SCHEDULE_SCHEDULED_PUBLISH"   envDefault:"0 * * * *"`
 	ReplyDMBatchSchedule       string `env:"SCHEDULE_REPLY_DM_BATCH"      envDefault:"0 * * * *"`
+	AutoReplyBatchSchedule     string `env:"SCHEDULE_AUTO_REPLY_BATCH"    envDefault:"0 * * * *"`
 	TrendFetchSchedule         string `env:"SCHEDULE_TREND_FETCH"         envDefault:"0 */12 * * *"`
 	// 空 = trend-fetch 完了後にチェーン実行。cron 式を設定すると独立スケジュールで実行。
 	TopicResearchSchedule string `env:"SCHEDULE_TOPIC_RESEARCH" envDefault:""`

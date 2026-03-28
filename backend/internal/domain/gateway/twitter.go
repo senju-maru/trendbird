@@ -33,13 +33,14 @@ type SearchTweetsInput struct {
 
 // Tweet represents a single tweet returned by the X API.
 type Tweet struct {
-	ID           string
-	Text         string
-	AuthorID     string
-	AuthorName   string
-	AuthorHandle string
-	CreatedAt    time.Time
-	Metrics      TweetMetrics
+	ID             string
+	Text           string
+	AuthorID       string
+	AuthorName     string
+	AuthorHandle   string
+	ConversationID string
+	CreatedAt      time.Time
+	Metrics        TweetMetrics
 }
 
 // TweetMetrics holds engagement metrics for a tweet.
@@ -74,6 +75,7 @@ type TwitterGateway interface {
 	SearchRecentTweets(ctx context.Context, accessToken string, input SearchTweetsInput) ([]Tweet, error)
 	GetTweetCounts(ctx context.Context, accessToken string, query string, startTime time.Time) ([]TweetCountDataPoint, error)
 	PostTweet(ctx context.Context, accessToken string, text string) (string, error)
+	PostReply(ctx context.Context, accessToken string, text string, inReplyToTweetID string) (string, error)
 	DeleteTweet(ctx context.Context, accessToken string, tweetID string) error
 	VerifyCredentials(ctx context.Context, accessToken string) error
 	SendDirectMessage(ctx context.Context, accessToken string, recipientID string, text string) error
