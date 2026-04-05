@@ -30,9 +30,7 @@ yarn-error.log*
 
 # env files
 frontend/.env*
-
-# vercel
-frontend/.vercel/
+!frontend/.env.local.example
 
 # typescript
 frontend/*.tsbuildinfo
@@ -40,6 +38,7 @@ frontend/next-env.d.ts
 
 # ===== Backend (Go) =====
 backend/.env*
+!backend/.env.example
 backend/tmp/
 backend/batch
 backend/scheduler
@@ -48,13 +47,9 @@ backend/server
 backend/mcp
 *.test
 
-# ===== Infra =====
-cloud-sql-proxy
-
 # ===== General =====
 .DS_Store
 *.pem
-.vercel
 memory/
 
 # ===== Analytics =====

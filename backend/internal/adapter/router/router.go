@@ -23,8 +23,7 @@ func New(c *di.Container) http.Handler {
 
 	mux := http.NewServeMux()
 
-	// ヘルスチェック (JWT 認証外、Cloud Run スタートアップ/ライブネスプローブ用)
-	// NOTE: /healthz は Cloud Run インフラ層にインターセプトされるため /health を使用
+	// ヘルスチェック (JWT 認証外、コンテナオーケストレーションのプローブ用)
 	mux.Handle("GET /health", middleware.TraceIDMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sqlDB, err := c.DB.DB()
 		if err != nil {
