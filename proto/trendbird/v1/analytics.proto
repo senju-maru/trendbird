@@ -1,0 +1,200 @@
+// X アナリティクスデータの取り込み・閲覧・インサイト取得
+syntax = "proto3";
+
+package trendbird.v1;
+
+option go_package = "github.com/trendbird/backend/gen/trendbird/v1;trendbirdv1";
+
+import "buf/validate/validate.proto";
+
+// 日次アナリティクスの1レコード
+message DailyAnalytics {
+  string id = 1;
+  // 日付（YYYY-MM-DD）
+  string date = 2;
+  // インプレッション数
+  int32 impressions = 3;
+  // いいね数
+  int32 likes = 4;
+  // エンゲージメント数
+  int32 engagements = 5;
+  // ブックマーク数
+  int32 bookmarks = 6;
+  // 共有された回数
+  int32 shares = 7;
+  // 新しいフォロー数
+  int32 new_follows = 8;
+  // フォロー解除数
+  int32 unfollows = 9;
+  // 返信数
+  int32 replies = 10;
+  // リポスト数
+  int32 reposts = 11;
+  // プロフィールへのアクセス数
+  int32 profile_visits = 12;
+  // ポストを作成した数
+  int32 posts_created = 13;
+  // 動画再生数
+  int32 video_views = 14;
+  // メディアの再生数
+  int32 media_views = 15;
+}
+
+// 投稿別アナリティクスの1レコード
+message PostAnalytics {
+  string id = 1;
+  // X のポストID
+  string post_id = 2;
+  // 投稿日時（ISO 8601）
+  string posted_at = 3;
+  // 投稿本文
+  string post_text = 4;
+  // 投稿URL
+  string post_url = 5;
+  // インプレッション数
+  int32 impressions = 6;
+  // いいね数
+  int32 likes = 7;
+  // エンゲージメント数
+  int32 engagements = 8;
+  // ブックマーク数
+  int32 bookmarks = 9;
+  // 共有された回数
+  int32 shares = 10;
+  // 新しいフォロー数
+  int32 new_follows = 11;
+  // 返信数
+  int32 replies = 12;
+  // リポスト数
+  int32 reposts = 13;
+  // プロフィールへのアクセス数
+  int32 profile_visits = 14;
+  // 詳細のクリック数
+  int32 detail_clicks = 15;
+  // URLのクリック数
+  int32 url_clicks = 16;
+  // ハッシュタグのクリック数
+  int32 hashtag_clicks = 17;
+  // パーマリンクのクリック数
+  int32 permalink_clicks = 18;
+}
+
+// アナリティクスサマリー（期間集計）
+message AnalyticsSummary {
+  // 集計期間の開始日（YYYY-MM-DD）
+  string start_date = 1;
+  // 集計期間の終了日（YYYY-MM-DD）
+  string end_date = 2;
+  // 合計インプレッション
+  int64 total_impressions = 3;
+  // 合計いいね
+  int64 total_likes = 4;
+  // 合計エンゲージメント
+  int64 total_engagements = 5;
+  // 合計新規フォロー
+  int64 total_new_follows = 6;
+  // 合計フォロー解除
+  int64 total_unfollows = 7;
+  // 日数
+  int32 days_count = 8;
+  // 投稿数
+  int32 posts_count = 9;
+  // 日別データ（チャート用）
+  repeated DailyAnalytics daily_data = 10;
+}
+
+// 成長インサイト（データドリブンの推奨アクション）
+message GrowthInsight {
+  // インサイトのカテゴリ（content, timing, engagement）
+  string category = 1;
+  // インサイト本文
+  string insight = 2;
+  // 推奨アクション
+  string action = 3;
+}
+
+// ---- リクエスト / レスポンス ----
+
+// 日次CSVデータのインポートリクエスト
+message ImportDailyAnalyticsRequest {
+  // CSV の各行をパースした配列
+  repeated DailyAnalytics records = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message ImportDailyAnalyticsResponse {
+  // 取り込み件数
+  int32 imported_count = 1;
+  // 更新件数
+  int32 updated_count = 2;
+}
+
+// 投稿別CSVデータのインポートリクエスト
+message ImportPostAnalyticsRequest {
+  // CSV の各行をパースした配列
+  repeated PostAnalytics records = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message ImportPostAnalyticsResponse {
+  // 取り込み件数
+  int32 imported_count = 1;
+  // 更新件数
+  int32 updated_count = 2;
+}
+
+// サマリー取得リクエスト
+message GetAnalyticsSummaryRequest {
+  // 開始日（YYYY-MM-DD、省略時は30日前）
+  optional string start_date = 1;
+  // 終了日（YYYY-MM-DD、省略時は今日）
+  optional string end_date = 2;
+}
+
+message GetAnalyticsSummaryResponse {
+  AnalyticsSummary summary = 1;
+}
+
+// 投稿別アナリティクス一覧リクエスト
+message ListPostAnalyticsRequest {
+  // ソート基準（impressions, likes, engagements, new_follows）。デフォルト: impressions
+  optional string sort_by = 1;
+  // 取得件数上限。デフォルト: 20
+  optional int32 limit = 2;
+  // 開始日フィルタ（YYYY-MM-DD）
+  optional string start_date = 3;
+  // 終了日フィルタ（YYYY-MM-DD）
+  optional string end_date = 4;
+}
+
+message ListPostAnalyticsResponse {
+  repeated PostAnalytics posts = 1;
+  // 全件数
+  int32 total = 2;
+}
+
+// 成長インサイト取得リクエスト
+message GetGrowthInsightsRequest {
+  // 分析期間の開始日（省略時は30日前）
+  optional string start_date = 1;
+  // 分析期間の終了日（省略時は今日）
+  optional string end_date = 2;
+}
+
+message GetGrowthInsightsResponse {
+  repeated GrowthInsight insights = 1;
+  // インサイト生成元のサマリー情報
+  AnalyticsSummary summary = 2;
+}
+
+// アナリティクスサービス（認証必須）
+service AnalyticsService {
+  // 日次オーバービューCSVデータを取り込む
+  rpc ImportDailyAnalytics(ImportDailyAnalyticsRequest) returns (ImportDailyAnalyticsResponse);
+  // 投稿別コンテンツCSVデータを取り込む
+  rpc ImportPostAnalytics(ImportPostAnalyticsRequest) returns (ImportPostAnalyticsResponse);
+  // 指定期間のアナリティクスサマリーを取得
+  rpc GetAnalyticsSummary(GetAnalyticsSummaryRequest) returns (GetAnalyticsSummaryResponse);
+  // 投稿別アナリティクスをソート・フィルタ付きで取得
+  rpc ListPostAnalytics(ListPostAnalyticsRequest) returns (ListPostAnalyticsResponse);
+  // データドリブンの成長インサイト・推奨アクションを取得
+  rpc GetGrowthInsights(GetGrowthInsightsRequest) returns (GetGrowthInsightsResponse);
+}
