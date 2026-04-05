@@ -9,16 +9,21 @@ import {
   ListPostAnalyticsResponseSchema,
   GetGrowthInsightsResponseSchema,
 } from '../../src/gen/trendbird/v1/analytics_pb';
+import { AnalyticsPage } from '../pages/analytics.page';
 
 test.describe('分析ページ', () => {
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context, page, apiMock }) => {
     await authenticateContext(context);
+    await apiMock.setupDefaults();
+    await page.addInitScript(() => {
+      sessionStorage.removeItem('tb_tutorial_pending');
+    });
   });
 
-  test('空状態を表示', async ({ page, apiMock }) => {
-    await apiMock.setupDefaults();
-    await page.goto('/analytics');
-    await expect(page.getByText('アナリティクスデータがありません')).toBeVisible();
+  test('空状態を表示', async ({ page }) => {
+    const analytics = new AnalyticsPage(page);
+    await analytics.goto();
+    await expect(analytics.emptyState).toBeVisible();
   });
 
   test('概要タブにKPIカードを表示', async ({ page, apiMock }) => {
@@ -39,13 +44,12 @@ test.describe('分析ページ', () => {
       dailyData,
     });
 
-    await apiMock.setupDefaults();
-    // Override after setupDefaults (last registered route wins)
     await apiMock.mockRPC('AnalyticsService', 'GetAnalyticsSummary',
       toJson(GetAnalyticsSummaryResponseSchema,
         create(GetAnalyticsSummaryResponseSchema, { summary })));
 
-    await page.goto('/analytics');
+    const analytics = new AnalyticsPage(page);
+    await analytics.goto();
     await expect(page.getByText('3,000')).toBeVisible();
     await expect(page.getByText('+10')).toBeVisible();
   });
@@ -63,13 +67,13 @@ test.describe('分析ページ', () => {
       }),
     ];
 
-    await apiMock.setupDefaults();
     await apiMock.mockRPC('AnalyticsService', 'ListPostAnalytics',
       toJson(ListPostAnalyticsResponseSchema,
         create(ListPostAnalyticsResponseSchema, { posts, total: 1 })));
 
-    await page.goto('/analytics');
-    await page.getByRole('button', { name: '投稿' }).click();
+    const analytics = new AnalyticsPage(page);
+    await analytics.goto();
+    await analytics.tabButton('投稿').click();
     await expect(page.getByText('テスト投稿です')).toBeVisible();
     await expect(page.getByText('500')).toBeVisible();
   });
@@ -88,13 +92,13 @@ test.describe('分析ページ', () => {
       daysCount: 1,
     });
 
-    await apiMock.setupDefaults();
     await apiMock.mockRPC('AnalyticsService', 'GetGrowthInsights',
       toJson(GetGrowthInsightsResponseSchema,
         create(GetGrowthInsightsResponseSchema, { insights, summary })));
 
-    await page.goto('/analytics');
-    await page.getByRole('button', { name: 'インサイト' }).click();
+    const analytics = new AnalyticsPage(page);
+    await analytics.goto();
+    await analytics.tabButton('インサイト').click();
     await page.getByRole('button', { name: 'インサイトを更新' }).click();
     await expect(page.getByText('エンゲージメント率が良好です。')).toBeVisible();
     await expect(page.getByText('この調子で投稿を続けましょう。')).toBeVisible();
