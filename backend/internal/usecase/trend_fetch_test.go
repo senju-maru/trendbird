@@ -116,6 +116,9 @@ func (m *mockTwitterGW) GetTweetCounts(ctx context.Context, accessToken string, 
 func (m *mockTwitterGW) PostTweet(ctx context.Context, accessToken string, text string) (string, error) {
 	return "", nil
 }
+func (m *mockTwitterGW) PostReply(_ context.Context, _ string, _ string, _ string) (string, error) {
+	return "", nil
+}
 func (m *mockTwitterGW) DeleteTweet(ctx context.Context, accessToken string, tweetID string) error {
 	return nil
 }

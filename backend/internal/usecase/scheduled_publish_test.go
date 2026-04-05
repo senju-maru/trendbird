@@ -140,6 +140,9 @@ func (m *mockScheduledTwitterGW) PostTweet(ctx context.Context, accessToken stri
 	}
 	return "https://x.com/user/status/123", nil
 }
+func (m *mockScheduledTwitterGW) PostReply(_ context.Context, _ string, _ string, _ string) (string, error) {
+	return "reply-tweet-id", nil
+}
 func (m *mockScheduledTwitterGW) DeleteTweet(_ context.Context, _ string, _ string) error {
 	return nil
 }
