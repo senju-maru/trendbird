@@ -16,6 +16,7 @@ import (
 
 // MCPContainer は MCP サーバーに必要な依存の組み立て結果を保持する。
 type MCPContainer struct {
+	AnalyticsUC    *usecase.AnalyticsUsecase
 	PostUC         *usecase.PostUsecase
 	TopicUC        *usecase.TopicUsecase
 	NotificationUC *usecase.NotificationUsecase
@@ -72,6 +73,9 @@ func NewMCPContainer(cfg *config.MCPConfig) (*MCPContainer, error) {
 	notificationUC := usecase.NewNotificationUsecase(notiRepo)
 	autoReplyUC := usecase.NewAutoReplyUsecase(autoReplyRuleRepo, replySentLogRepo)
 	autoDMUC := usecase.NewAutoDMUsecase(autoDMRuleRepo, dmSentLogRepo)
+	analyticsDailyRepo := repository.NewXAnalyticsDailyRepository(db)
+	analyticsPostRepo := repository.NewXAnalyticsPostRepository(db)
+	analyticsUC := usecase.NewAnalyticsUsecase(analyticsDailyRepo, analyticsPostRepo)
 
 	// --- User Resolution ---
 	userID := cfg.MCPUserID
@@ -85,6 +89,7 @@ func NewMCPContainer(cfg *config.MCPConfig) (*MCPContainer, error) {
 	}
 
 	return &MCPContainer{
+		AnalyticsUC:    analyticsUC,
 		PostUC:         postUC,
 		TopicUC:        topicUC,
 		NotificationUC: notificationUC,

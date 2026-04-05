@@ -45,6 +45,7 @@ backend/batch
 backend/scheduler
 backend/seed
 backend/server
+backend/mcp
 *.test
 
 # ===== Infra =====

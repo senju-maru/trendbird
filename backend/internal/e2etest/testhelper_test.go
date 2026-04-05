@@ -34,6 +34,7 @@ type testEnv struct {
 	db     *gorm.DB
 
 	// Connect RPC clients (認証なし)
+	analyticsClient    trendbirdv1connect.AnalyticsServiceClient
 	authClient         trendbirdv1connect.AuthServiceClient
 	autoDMClient       trendbirdv1connect.AutoDMServiceClient
 	dashboardClient    trendbirdv1connect.DashboardServiceClient
@@ -85,6 +86,7 @@ func setupTest(t *testing.T) *testEnv {
 		mockTwitter: tw,
 		mockAI:      ai,
 
+		analyticsClient:    trendbirdv1connect.NewAnalyticsServiceClient(httpClient, baseURL),
 		authClient:         trendbirdv1connect.NewAuthServiceClient(httpClient, baseURL),
 		autoDMClient:       trendbirdv1connect.NewAutoDMServiceClient(httpClient, baseURL),
 		dashboardClient:    trendbirdv1connect.NewDashboardServiceClient(httpClient, baseURL),
@@ -107,6 +109,7 @@ func truncateAll(t *testing.T, db *gorm.DB) {
 	t.Helper()
 
 	const query = `TRUNCATE TABLE
+		x_analytics_posts, x_analytics_daily,
 		reply_sent_logs, reply_pending_queue, auto_reply_rules,
 		dm_sent_logs, dm_pending_queue, auto_dm_rules,
 		user_notifications, notifications, activities, ai_generation_logs, generated_posts, posts,

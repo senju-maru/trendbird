@@ -21,6 +21,7 @@ import (
 // Container は全依存の組み立て結果を保持する。
 type Container struct {
 	// Connect RPC handlers
+	AnalyticsHandler    *handler.AnalyticsHandler
 	AuthHandler         *handler.AuthHandler
 	AutoDMHandler       *handler.AutoDMHandler
 	AutoReplyHandler    *handler.AutoReplyHandler
@@ -95,11 +96,15 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	autoReplyRuleRepo := repository.NewAutoReplyRuleRepository(db)
 	replySentLogRepo := repository.NewReplySentLogRepository(db)
 	autoReplyUC := usecase.NewAutoReplyUsecase(autoReplyRuleRepo, replySentLogRepo)
+	analyticsDailyRepo := repository.NewXAnalyticsDailyRepository(db)
+	analyticsPostRepo := repository.NewXAnalyticsPostRepository(db)
+	analyticsUC := usecase.NewAnalyticsUsecase(analyticsDailyRepo, analyticsPostRepo)
 
 	// --- Handlers ---
 	secure := cfg.CookieSecure
 
 	return &Container{
+		AnalyticsHandler:    handler.NewAnalyticsHandler(analyticsUC),
 		AuthHandler:         handler.NewAuthHandler(authUC, secure, cfg.CookieDomain),
 		AutoDMHandler:       handler.NewAutoDMHandler(autoDMUC),
 		AutoReplyHandler:    handler.NewAutoReplyHandler(autoReplyUC),
@@ -173,9 +178,13 @@ func NewContainerForTest(deps TestDeps) *Container {
 	autoReplyRuleRepo := repository.NewAutoReplyRuleRepository(db)
 	replySentLogRepo := repository.NewReplySentLogRepository(db)
 	autoReplyUC := usecase.NewAutoReplyUsecase(autoReplyRuleRepo, replySentLogRepo)
+	analyticsDailyRepo := repository.NewXAnalyticsDailyRepository(db)
+	analyticsPostRepo := repository.NewXAnalyticsPostRepository(db)
+	analyticsUC := usecase.NewAnalyticsUsecase(analyticsDailyRepo, analyticsPostRepo)
 
 	// --- Handlers (secure=false: httptest は TLS なし) ---
 	return &Container{
+		AnalyticsHandler:    handler.NewAnalyticsHandler(analyticsUC),
 		AuthHandler:         handler.NewAuthHandler(authUC, false, ""),
 		AutoDMHandler:       handler.NewAutoDMHandler(autoDMUC),
 		AutoReplyHandler:    handler.NewAutoReplyHandler(autoReplyUC),

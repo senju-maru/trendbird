@@ -13,6 +13,7 @@ func NewServer(c *di.MCPContainer) *server.MCPServer {
 		server.WithToolCapabilities(true),
 	)
 
+	registerAnalyticsTools(s, c)
 	registerPostTools(s, c)
 	registerTopicTools(s, c)
 	registerNotificationTools(s, c)

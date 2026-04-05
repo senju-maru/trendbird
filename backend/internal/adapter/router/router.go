@@ -43,6 +43,7 @@ func New(c *di.Container) http.Handler {
 
 	// Connect RPC services
 	services := []route{
+		wrap(trendbirdv1connect.NewAnalyticsServiceHandler(c.AnalyticsHandler, interceptors)),
 		wrap(trendbirdv1connect.NewAuthServiceHandler(c.AuthHandler, interceptors)),
 		wrap(trendbirdv1connect.NewAutoDMServiceHandler(c.AutoDMHandler, interceptors)),
 		wrap(trendbirdv1connect.NewAutoReplyServiceHandler(c.AutoReplyHandler, interceptors)),
