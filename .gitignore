@@ -53,7 +53,7 @@ backend/mcp
 memory/
 
 # ===== Analytics =====
-analytics/
+/analytics/
 
 # ===== Marketing & Infra (OSS excluded) =====
 marketing/
