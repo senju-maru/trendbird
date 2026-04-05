@@ -10,12 +10,14 @@ import { NotificationType as ProtoNotificationType } from '@/gen/trendbird/v1/no
 import type { TwitterConnectionInfo as ProtoTwitterConnectionInfo } from '@/gen/trendbird/v1/twitter_pb';
 import { TwitterConnectionStatus as ProtoTwitterConnectionStatus } from '@/gen/trendbird/v1/twitter_pb';
 import type { NotificationSettings as ProtoNotificationSettings } from '@/gen/trendbird/v1/settings_pb';
+import type { DailyAnalytics as ProtoDailyAnalytics, PostAnalytics as ProtoPostAnalytics, AnalyticsSummary as ProtoAnalyticsSummary, GrowthInsight as ProtoGrowthInsight } from '@/gen/trendbird/v1/analytics_pb';
 
 import type {
   User, Topic, TopicStatus, TopicSparklineData, SpikeHistoryEntry, PostingTips,
   Activity, ActivityType, GeneratedPost, PostStyle, DashboardStats,
   Notification, NotificationType, TwitterConnectionInfo, TwitterConnectionStatus,
   ScheduledPost, PostHistory, PostStats, PostStatus, Genre,
+  DailyAnalytics, PostAnalytics, AnalyticsSummary, GrowthInsight,
 } from '@/types';
 
 // --- TopicStatus ---
@@ -366,6 +368,74 @@ export function fromProtoNotificationSettings(s: ProtoNotificationSettings): Not
   return {
     spikeEnabled: s.spikeEnabled,
     risingEnabled: s.risingEnabled,
+  };
+}
+
+// --- Analytics ---
+
+export function fromProtoDailyAnalytics(p: ProtoDailyAnalytics): DailyAnalytics {
+  return {
+    id: p.id,
+    date: p.date,
+    impressions: p.impressions,
+    likes: p.likes,
+    engagements: p.engagements,
+    bookmarks: p.bookmarks,
+    shares: p.shares,
+    newFollows: p.newFollows,
+    unfollows: p.unfollows,
+    replies: p.replies,
+    reposts: p.reposts,
+    profileVisits: p.profileVisits,
+    postsCreated: p.postsCreated,
+    videoViews: p.videoViews,
+    mediaViews: p.mediaViews,
+  };
+}
+
+export function fromProtoPostAnalytics(p: ProtoPostAnalytics): PostAnalytics {
+  return {
+    id: p.id,
+    postId: p.postId,
+    postedAt: p.postedAt,
+    postText: p.postText,
+    postUrl: p.postUrl,
+    impressions: p.impressions,
+    likes: p.likes,
+    engagements: p.engagements,
+    bookmarks: p.bookmarks,
+    shares: p.shares,
+    newFollows: p.newFollows,
+    replies: p.replies,
+    reposts: p.reposts,
+    profileVisits: p.profileVisits,
+    detailClicks: p.detailClicks,
+    urlClicks: p.urlClicks,
+    hashtagClicks: p.hashtagClicks,
+    permalinkClicks: p.permalinkClicks,
+  };
+}
+
+export function fromProtoAnalyticsSummary(p: ProtoAnalyticsSummary): AnalyticsSummary {
+  return {
+    startDate: p.startDate,
+    endDate: p.endDate,
+    totalImpressions: Number(p.totalImpressions),
+    totalLikes: Number(p.totalLikes),
+    totalEngagements: Number(p.totalEngagements),
+    totalNewFollows: Number(p.totalNewFollows),
+    totalUnfollows: Number(p.totalUnfollows),
+    daysCount: p.daysCount,
+    postsCount: p.postsCount,
+    dailyData: p.dailyData.map(fromProtoDailyAnalytics),
+  };
+}
+
+export function fromProtoGrowthInsight(p: ProtoGrowthInsight): GrowthInsight {
+  return {
+    category: p.category,
+    insight: p.insight,
+    action: p.action,
   };
 }
 

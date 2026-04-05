@@ -48,6 +48,12 @@ import {
   ListAutoReplyRulesResponseSchema,
   GetReplySentLogsResponseSchema,
 } from '../../src/gen/trendbird/v1/auto_reply_pb';
+import {
+  AnalyticsSummarySchema,
+  GetAnalyticsSummaryResponseSchema,
+  ListPostAnalyticsResponseSchema,
+  GetGrowthInsightsResponseSchema,
+} from '../../src/gen/trendbird/v1/analytics_pb';
 
 /**
  * setupDefaults 用の固定初期化データ。
@@ -194,6 +200,21 @@ export class ApiMock {
       this.mockRPC('AutoReplyService', 'GetReplySentLogs',
         toJson(GetReplySentLogsResponseSchema,
           create(GetReplySentLogsResponseSchema, {}))),
+
+      // AnalyticsService
+      this.mockRPC('AnalyticsService', 'GetAnalyticsSummary',
+        toJson(GetAnalyticsSummaryResponseSchema,
+          create(GetAnalyticsSummaryResponseSchema, {
+            summary: create(AnalyticsSummarySchema, {}),
+          }))),
+      this.mockRPC('AnalyticsService', 'ListPostAnalytics',
+        toJson(ListPostAnalyticsResponseSchema,
+          create(ListPostAnalyticsResponseSchema, {}))),
+      this.mockRPC('AnalyticsService', 'GetGrowthInsights',
+        toJson(GetGrowthInsightsResponseSchema,
+          create(GetGrowthInsightsResponseSchema, {
+            summary: create(AnalyticsSummarySchema, {}),
+          }))),
     ]);
   }
 

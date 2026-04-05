@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Bell, Tag, Send, MessageCircle, Reply, Settings, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { LayoutDashboard, Bell, Tag, Send, MessageCircle, Reply, BarChart3, Settings, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { C, up, dn } from '@/lib/design-tokens';
 import { useNotificationStore } from '@/stores';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +33,7 @@ const navItems = [
   { href: '/posts', label: '投稿', icon: Send },
   { href: '/auto-dm', label: '自動DM', icon: MessageCircle },
   { href: '/auto-reply', label: '自動リプライ', icon: Reply },
+  { href: '/analytics', label: '分析', icon: BarChart3 },
   { href: '/notifications', label: '通知', icon: Bell },
   { href: '/settings', label: '設定', icon: Settings },
 ];

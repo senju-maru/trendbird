@@ -1,3 +1,4 @@
+export { useAnalyticsStore } from './analyticsStore';
 export { useAuthStore } from './authStore';
 export { useTopicStore, selectSelectedTopic, selectSpikedTopics, selectTopicCount } from './topicStore';
 export { useDashboardStore } from './dashboardStore';
